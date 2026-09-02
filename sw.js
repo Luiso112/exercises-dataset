@@ -1,4 +1,4 @@
-const CACHE_NAME = 'exercisedb-pwa-v9-dnd-timer-ai-upgrade';
+const CACHE_NAME = 'exercisedb-pwa-v10-dnd-active-binding';
 const MEDIA_CACHE = 'exercisedb-media-v1';
 
 const STATIC_ASSETS = [

@@ -781,7 +781,9 @@ function renderPage(reset = false) {
       badgeHtml = `<div class="order-badge">#${rIdx + 1}</div>`;
       reorderHtml = `<div class="reorder-bar">
         <button class="reorder-btn reorder-prev" ${rIdx === 0 ? 'disabled' : ''}>◀ Antes</button>
-        <span style="font-size:11px;font-weight:800;color:var(--accent);">#${rIdx + 1}</span>
+        <div class="drag-handle-btn" draggable="true" title="Arrastra para reordenar">
+          <span>☰</span> Arrastrar
+        </div>
         <button class="reorder-btn reorder-next" ${rIdx === state.routineList.length-1 ? 'disabled' : ''}>Después ▶</button>
       </div>`;
     }
@@ -806,6 +808,8 @@ function renderPage(reset = false) {
     card.querySelector('.card-body').addEventListener('click', () => openModal(ex.id));
     card.querySelector('.card-media').addEventListener('click', e => { if (!e.target.classList.contains('card-select-btn')) openModal(ex.id); });
     if (isRoutineV && inRoutine) {
+      card.setAttribute('draggable', 'true');
+      setupCardDragEvents(card, ex.id);
       const prev = card.querySelector('.reorder-prev');
       const next = card.querySelector('.reorder-next');
       if (prev) prev.addEventListener('click', e => moveRoutineItem(ex.id, -1, e));

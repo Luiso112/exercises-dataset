@@ -1,4 +1,4 @@
-const CACHE_NAME = 'exercisedb-pwa-v11-single-line-timer';
+const CACHE_NAME = 'exercisedb-pwa-v12-ios-pro-experience';
 const MEDIA_CACHE = 'exercisedb-media-v1';
 
 const STATIC_ASSETS = [

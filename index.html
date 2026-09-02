@@ -386,6 +386,97 @@
     .ai-quick-prompt{padding:6px 12px;border-radius:16px;background:var(--ai-muted);border:1px solid rgba(124,58,237,0.3);color:#c084fc;font-size:11.5px;font-weight:600;white-space:nowrap;cursor:pointer;}
     .ai-quick-prompt:hover{background:rgba(124,58,237,0.25);}
 
+    
+    /* ── iOS Bottom Tab Bar Style ── */
+    .ios-bottom-tabbar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(56px + var(--sab));
+      padding-bottom: var(--sab);
+      background: rgba(20, 20, 24, 0.92);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 100;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .ios-tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      height: 100%;
+      color: var(--text-tertiary);
+      font-size: 11px;
+      font-weight: 600;
+      position: relative;
+      transition: color 0.15s ease;
+    }
+    .ios-tab-item.active {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .ios-tab-icon {
+      font-size: 19px;
+      line-height: 1;
+    }
+    .ios-tab-badge {
+      position: absolute;
+      top: 6px;
+      right: calc(50% - 18px);
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 10px;
+      min-width: 16px;
+      text-align: center;
+    }
+    .ai-tab-special.active .ios-tab-label {
+      color: #a855f7;
+    }
+
+    /* Screen Wake Lock Indicator in Rest Timer */
+    .wakelock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      margin-left: 6px;
+    }
+
+    @media (max-width: 820px) {
+      .ios-bottom-tabbar { display: flex; }
+      .grid-container { padding: 10px 10px calc(70px + var(--sab)); }
+      .mobile-mode-trigger-btn { display: none !important; }
+      #mobile-mode-btn { display: none !important; }
+      .exercise-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+      
+      /* Make Modal Panel behave like iOS Bottom Sheet */
+      .modal-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+      }
+      .modal-panel {
+        width: 100% !important;
+        max-height: 88dvh !important;
+        border-radius: 24px 24px 0 0 !important;
+        transform: translateY(0);
+      }
+    }
+
     /* Mobile */
     .mobile-filter-trigger{display:none;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;background:var(--bg-elevated);border:1px solid var(--border);font-size:12px;font-weight:600;}
 
@@ -1491,8 +1582,106 @@ function renderSavedRoutinesModal() {
   });
 }
 
+
+// ── SCREEN WAKE LOCK API (Mantiene pantalla encendida en gimnasio) ──
+let wakeLock = null;
+
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      showWakeLockBadge(true);
+    }
+  } catch (err) {
+    console.log('WakeLock error:', err.message);
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock !== null) {
+    wakeLock.release().then(() => { wakeLock = null; showWakeLockBadge(false); });
+  }
+}
+
+function showWakeLockBadge(active) {
+  const container = document.querySelector('.timer-left-display');
+  let badge = document.getElementById('wakelock-badge');
+  if (active) {
+    if (!badge && container) {
+      badge = document.createElement('span');
+      badge.id = 'wakelock-badge';
+      badge.className = 'wakelock-badge';
+      badge.innerHTML = '💡 Pantalla ON';
+      container.appendChild(badge);
+    }
+  } else {
+    if (badge) badge.remove();
+  }
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (wakeLock !== null && document.visibilityState === 'visible') {
+    await requestWakeLock();
+  }
+});
+
+// Haptic Feedback Helper
+function triggerHaptic(type = 'light') {
+  if ('vibrate' in navigator) {
+    if (type === 'light') navigator.vibrate(25);
+    else if (type === 'medium') navigator.vibrate(50);
+    else if (type === 'success') navigator.vibrate([30, 50, 30]);
+  }
+}
+
 // ── Wire Events ──────────────────────────────
 function wireEvents() {
+
+  // iOS Bottom Tab Bar Wiring
+  const iosTabExplore = document.getElementById('ios-tab-explore');
+  const iosTabRoutine = document.getElementById('ios-tab-routine');
+  const iosTabAi      = document.getElementById('ios-tab-ai');
+
+  if (iosTabExplore) {
+    iosTabExplore.addEventListener('click', () => {
+      triggerHaptic('light');
+      switchView('explore');
+      iosTabExplore.classList.add('active');
+      iosTabRoutine.classList.remove('active');
+      iosTabAi.classList.remove('active');
+    });
+  }
+  if (iosTabRoutine) {
+    iosTabRoutine.addEventListener('click', () => {
+      triggerHaptic('light');
+      switchView('routine');
+      iosTabRoutine.classList.add('active');
+      iosTabExplore.classList.remove('active');
+      iosTabAi.classList.remove('active');
+      requestWakeLock();
+    });
+  }
+  if (iosTabAi) {
+    iosTabAi.addEventListener('click', () => {
+      triggerHaptic('medium');
+      openAIPanel();
+    });
+  }
+
+  // Update routine count badges
+  const originalSwitchView = switchView;
+  switchView = function(view) {
+    originalSwitchView(view);
+    if (iosTabExplore && iosTabRoutine) {
+      iosTabExplore.classList.toggle('active', view === 'explore');
+      iosTabRoutine.classList.toggle('active', view === 'routine');
+    }
+    const iosCount = document.getElementById('ios-routine-count');
+    if (iosCount) iosCount.textContent = state.routineList.length;
+    if (view === 'routine') requestWakeLock();
+    else releaseWakeLock();
+  };
+
   // Routine Manager handlers
   const saveRoutineBtn = document.getElementById('save-as-new-routine-btn');
   const openSavedBtn = document.getElementById('open-saved-routines-btn');
@@ -1636,6 +1825,24 @@ window.addEventListener('DOMContentLoaded', init);
     </div>
   </div>
 </div>
+
+
+<!-- iOS Bottom Tab Bar (Only visible on Mobile/iPhone) -->
+<nav class="ios-bottom-tabbar" id="ios-bottom-tabbar">
+  <button class="ios-tab-item active" id="ios-tab-explore">
+    <span class="ios-tab-icon">📚</span>
+    <span class="ios-tab-label">Explorar</span>
+  </button>
+  <button class="ios-tab-item" id="ios-tab-routine">
+    <span class="ios-tab-icon">🔥</span>
+    <span class="ios-tab-label">Mi Rutina</span>
+    <span class="ios-tab-badge" id="ios-routine-count">0</span>
+  </button>
+  <button class="ios-tab-item ai-tab-special" id="ios-tab-ai">
+    <span class="ios-tab-icon">🤖</span>
+    <span class="ios-tab-label">Entrenador</span>
+  </button>
+</nav>
 
 </body>
 </html>

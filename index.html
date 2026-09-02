@@ -95,10 +95,24 @@
     .ai-trainer-btn:hover{box-shadow:0 6px 18px rgba(124,58,237,0.55);transform:translateY(-1px);}
 
     
-    /* ── Touch Optimization: Larger Buttons & Better Spacing ── */
-    .timer-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
-    .timer-label { font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; }
-    .timer-left-display { display: flex; align-items: center; gap: 10px; }
+    /* ── Single Line Compact Rest Timer ── */
+    .rest-timer-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 10px 16px 0;
+      flex-wrap: nowrap !important;
+      overflow-x: auto;
+    }
+    .timer-buttons { display: flex; gap: 6px; flex-wrap: nowrap !important; align-items: center; }
+    .timer-label { font-size: 14px; font-weight: 700; }
+    .timer-left-display { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .timer-display { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); white-space: nowrap; }
     .timer-btn {
       padding: 8px 14px;
       min-height: 38px;
@@ -452,16 +466,13 @@
       </button>
     </div>
 
-    <!-- Rest Timer with Add/Subtract Controls & Larger Hit-Targets -->
+    <!-- Single Line Rest Timer (30s & 60s) -->
     <div class="rest-timer-bar">
       <div class="timer-left-display">
-        <span class="timer-label">⏱️ Descanso:</span>
+        <span class="timer-label">⏱️</span>
         <span class="timer-display" id="timer-display">00:00</span>
       </div>
       <div class="timer-buttons">
-        <button class="timer-btn timer-btn-sub" data-adjust="-30">-30s</button>
-        <button class="timer-btn timer-btn-sub" data-adjust="-15">-15s</button>
-        <button class="timer-btn timer-btn-add" data-adjust="15">+15s</button>
         <button class="timer-btn timer-btn-add" data-adjust="30">+30s</button>
         <button class="timer-btn timer-btn-add" data-adjust="60">+60s</button>
         <button class="timer-btn timer-btn-reset" id="timer-reset-btn">✕</button>

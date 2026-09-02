@@ -1,4 +1,4 @@
-const CACHE_NAME = 'exercisedb-pwa-v6-polished-modal';
+const CACHE_NAME = 'exercisedb-pwa-v7-trx-single-db';
 const MEDIA_CACHE = 'exercisedb-media-v1';
 
 const STATIC_ASSETS = [

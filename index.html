@@ -869,78 +869,109 @@ function hideTyping() {
   if (typing) typing.remove();
 }
 
-// ── NLP & Rule-Based Exercise Recommendation Engine ──
+// ── NLP & Advanced Recommendation Engine (Single Dumbbell, TRX, Bodyweight & Multi-Equipment) ──
 function generateSmartRoutine(promptText) {
   const q = promptText.toLowerCase();
-  
-  // 1. Detect Muscle Groups & Categories
+
+  // 1. Muscle Groups Detection
   const bodyParts = [];
-  const targetMuscles = [];
-  
-  if (q.includes('pecho') || q.includes('pectoral') || q.includes('chest')) {
-    bodyParts.push('pecho', 'chest');
-    targetMuscles.push('pectorals', 'pecho');
-  }
-  if (q.includes('espalda') || q.includes('back') || q.includes('dorsal')) {
-    bodyParts.push('espalda', 'back');
-    targetMuscles.push('dorsales', 'lats', 'espalda');
-  }
-  if (q.includes('pierna') || q.includes('gluteo') || q.includes('glúteo') || q.includes('cuadricep') || q.includes('cuádricep') || q.includes('isquio') || q.includes('femoral') || q.includes('leg') || q.includes('legs')) {
+  if (q.includes('pecho') || q.includes('pectoral') || q.includes('chest')) bodyParts.push('pecho', 'chest');
+  if (q.includes('espalda') || q.includes('back') || q.includes('dorsal') || q.includes('trapecio')) bodyParts.push('espalda', 'back');
+  if (q.includes('pierna') || q.includes('gluteo') || q.includes('glúteo') || q.includes('cuadricep') || q.includes('cuádricep') || q.includes('isquio') || q.includes('femoral') || q.includes('gemelo') || q.includes('leg')) {
     bodyParts.push('piernas', 'upper legs', 'lower legs', 'glúteos', 'legs');
   }
   if (q.includes('brazo') || q.includes('bicep') || q.includes('bícep') || q.includes('tricep') || q.includes('trícep') || q.includes('antebrazo') || q.includes('arm')) {
     bodyParts.push('brazos', 'upper arms', 'lower arms', 'arms');
   }
-  if (q.includes('hombro') || q.includes('deltoid') || q.includes('shoulder')) {
-    bodyParts.push('hombros', 'shoulders');
-  }
-  if (q.includes('core') || q.includes('abs') || q.includes('abdominal') || q.includes('cintura') || q.includes('waist')) {
+  if (q.includes('hombro') || q.includes('deltoid') || q.includes('shoulder')) bodyParts.push('hombros', 'shoulders');
+  if (q.includes('core') || q.includes('abs') || q.includes('abdominal') || q.includes('cintura') || q.includes('oblicuo') || q.includes('waist')) {
     bodyParts.push('cintura', 'waist', 'core');
   }
-  if (q.includes('cardio') || q.includes('resistencia') || q.includes('hiit') || q.includes('quemar')) {
-    bodyParts.push('cardio');
-  }
+  if (q.includes('cardio') || q.includes('resistencia') || q.includes('hiit') || q.includes('quemar')) bodyParts.push('cardio');
 
-  // 2. Detect Equipment Constraints
-  let equipmentFilter = null;
-  if (q.includes('mancuerna') || q.includes('dumbbell')) {
-    equipmentFilter = ['mancuerna', 'dumbbell', 'mancuernas'];
-  } else if (q.includes('barra') || q.includes('barbell')) {
-    equipmentFilter = ['barra', 'barbell'];
-  } else if (q.includes('polea') || q.includes('cable')) {
-    equipmentFilter = ['cable', 'polea'];
-  } else if (q.includes('sin equipo') || q.includes('sin material') || q.includes('casa') || q.includes('corporal') || q.includes('calistenia') || q.includes('body weight')) {
-    equipmentFilter = ['peso corporal', 'body weight'];
-  }
+  // 2. Specialized Equipment Constraints
+  const isTrx = q.includes('trx') || q.includes('suspensi') || q.includes('suspension') || q.includes('correas');
+  const isSingleDumbbell = (q.includes('una mancuerna') || q.includes('1 mancuerna') || q.includes('sola mancuerna') || q.includes('una sola') || q.includes('unilateral') || q.includes('solo una'));
+  const isGeneralDumbbell = !isSingleDumbbell && (q.includes('mancuerna') || q.includes('dumbbell'));
+  const isKettlebell = q.includes('kettlebell') || q.includes('pesa rusa');
+  const isBarbell = q.includes('barra') || q.includes('barbell');
+  const isCable = q.includes('polea') || q.includes('cable');
+  const isBodyweight = q.includes('sin equipo') || q.includes('sin material') || q.includes('casa') || q.includes('corporal') || q.includes('calistenia');
+  const isBands = q.includes('banda') || q.includes('elástica') || q.includes('gomas');
 
-  // 3. Detect Count
+  // 3. Number of exercises
   let count = 6;
   const numMatch = q.match(/(\d+)\s*(ejercicio|ejercicios|exerc|ex)/);
-  if (numMatch) {
-    count = Math.min(Math.max(parseInt(numMatch[1], 10), 3), 12);
-  }
+  if (numMatch) count = Math.min(Math.max(parseInt(numMatch[1], 10), 3), 12);
 
-  // 4. Candidate Matching
+  // 4. Filter Candidates with high precision
   let candidates = state.exercises.filter(ex => {
-    const text = (ex._idx || '').toLowerCase();
-    
-    // Check equipment if specified
-    if (equipmentFilter) {
-      const hasEquip = equipmentFilter.some(eq => text.includes(eq));
-      if (!hasEquip) return false;
+    const fullText = `${ex.name} ${ex.name_en || ''} ${ex.category} ${ex.equipment} ${ex.equipment_en || ''} ${ex.target || ''}`.toLowerCase();
+
+    // Specific TRX Matching
+    if (isTrx) {
+      const matchTrx = fullText.includes('trx') || fullText.includes('suspens') || fullText.includes('straps') || 
+                       fullText.includes('correas') || ex.id === '0498' || ex.id === '0805' || ex.id === '0806' || 
+                       ex.id === '0807' || ex.id === '0808' || ex.id === '0809';
+      if (!matchTrx) return false;
     }
-    
-    // Check muscle group
+    // Specific Single Dumbbell (Unilateral) Matching
+    else if (isSingleDumbbell) {
+      const isDb = fullText.includes('mancuerna') || fullText.includes('dumbbell');
+      const isUni = fullText.includes('un brazo') || fullText.includes('una mano') || fullText.includes('una pierna') || 
+                    fullText.includes('unilateral') || fullText.includes('one arm') || fullText.includes('single arm') || 
+                    fullText.includes('single leg') || fullText.includes('1 arm') || fullText.includes('alternado') || 
+                    fullText.includes('alternating');
+      if (!isDb || !isUni) return false;
+    }
+    // General Dumbbells Matching
+    else if (isGeneralDumbbell) {
+      if (!fullText.includes('mancuerna') && !fullText.includes('dumbbell')) return false;
+    }
+    // Kettlebell Matching
+    else if (isKettlebell) {
+      if (!fullText.includes('kettlebell') && !fullText.includes('pesa rusa')) return false;
+    }
+    // Barbell Matching
+    else if (isBarbell) {
+      if (!fullText.includes('barra') && !fullText.includes('barbell')) return false;
+    }
+    // Cable / Pulley Matching
+    else if (isCable) {
+      if (!fullText.includes('cable') && !fullText.includes('polea')) return false;
+    }
+    // Bodyweight only Matching
+    else if (isBodyweight) {
+      if (!fullText.includes('peso corporal') && !fullText.includes('body weight')) return false;
+    }
+    // Resistance Bands Matching
+    else if (isBands) {
+      if (!fullText.includes('banda') && !fullText.includes('band')) return false;
+    }
+
+    // Muscle Group Match (if specified)
     if (bodyParts.length > 0) {
-      const matchBody = bodyParts.some(bp => text.includes(bp));
-      if (!matchBody) return false;
+      const matchMuscle = bodyParts.some(bp => fullText.includes(bp));
+      if (!matchMuscle) return false;
     }
-    
+
     return true;
   });
 
-  // Fallback if too specific
-  if (candidates.length < count) {
+  // Fallback if TRX or Single DB yielded fewer than requested count
+  if (candidates.length < count && (isTrx || isSingleDumbbell)) {
+    // If TRX has fewer than count in dataset, take all available TRX
+    if (isTrx) {
+      candidates = state.exercises.filter(ex => {
+        const fullText = `${ex.name} ${ex.name_en || ''}`.toLowerCase();
+        return fullText.includes('trx') || fullText.includes('suspens') || fullText.includes('straps') || 
+               ['0498','0805','0806','0807','0808','0809'].includes(ex.id);
+      });
+    }
+  }
+
+  // General fallback
+  if (candidates.length === 0) {
     candidates = state.exercises.filter(ex => {
       const text = (ex._idx || '').toLowerCase();
       if (bodyParts.length > 0) return bodyParts.some(bp => text.includes(bp));
@@ -950,11 +981,16 @@ function generateSmartRoutine(promptText) {
 
   // Shuffle & Pick balanced variety
   const shuffled = candidates.slice().sort(() => 0.5 - Math.random());
-  const selected = shuffled.slice(0, count);
+  const selected = shuffled.slice(0, Math.min(count, candidates.length));
 
-  let desc = `He diseñado esta rutina personalizada de **${selected.length} ejercicios** adaptada a tu objetivo.`;
-  if (bodyParts.length > 0) desc += ` Enfocada en **${bodyParts.join(', ')}**.`;
-  if (equipmentFilter) desc += ` Utilizando equipamiento: **${equipmentFilter[0]}**.`;
+  // Build natural explanation
+  let desc = `He preparado tu rutina de **${selected.length} ejercicios** adaptada a tu material:`;
+  if (isSingleDumbbell) desc += `\n• **Equipamiento:** 1 Sola Mancuerna (ejercicios unilaterales estrictos).`;
+  else if (isTrx) desc += `\n• **Equipamiento:** Entrenamiento en Suspensión (TRX).`;
+  else if (isGeneralDumbbell) desc += `\n• **Equipamiento:** Mancuernas.`;
+  else if (isBodyweight) desc += `\n• **Equipamiento:** Peso Corporal (sin material).`;
+
+  if (bodyParts.length > 0) desc += `\n• **Grupo muscular:** ${bodyParts.join(', ')}.`;
 
   return {
     message: desc,

@@ -327,13 +327,17 @@
       </div>
     </div>
 
-    <!-- Routine Banner -->
-    <div class="routine-banner" id="routine-banner" style="display:none;">
-      <div class="routine-banner-text">
-        <h3 id="routine-banner-title">Orden de mi Rutina</h3>
-        <p>Usa las flechas ◀ ▶ para ordenar. Los cambios se guardan automáticamente.</p>
+    <!-- Routine Top Bar with Editable Name & Saved Routines -->
+    <div class="routine-top-controls" id="routine-banner" style="display:none;">
+      <div class="routine-title-container">
+        <input type="text" class="routine-title-input" id="routine-name-input" value="Mi Rutina de Entrenamiento" placeholder="Nombre de tu rutina..." />
+        <span class="routine-date-badge" id="routine-date-display">📅 Creada hoy</span>
       </div>
-      <button class="clear-routine-btn" id="clear-routine-btn">Vaciar Rutina</button>
+      <div class="routine-actions-group">
+        <button class="routine-act-btn primary" id="save-as-new-routine-btn">💾 Guardar Rutina</button>
+        <button class="routine-act-btn" id="open-saved-routines-btn">📁 Mis Rutinas (<span id="saved-routines-count">0</span>)</button>
+        <button class="clear-routine-btn" id="clear-routine-btn">Vaciar</button>
+      </div>
     </div>
 
     <div class="grid-container">
@@ -974,8 +978,154 @@ function processUserRequest(text) {
   }, 500);
 }
 
+
+// ── SAVED ROUTINES STORAGE & MANAGER ───────────────
+function getSavedRoutines() {
+  return JSON.parse(localStorage.getItem('exercisedb_saved_routines') || '[]');
+}
+
+function saveRoutinesToStorage(list) {
+  localStorage.setItem('exercisedb_saved_routines', JSON.stringify(list));
+  updateSavedRoutinesCount();
+}
+
+function updateSavedRoutinesCount() {
+  const count = getSavedRoutines().length;
+  const countEl = document.getElementById('saved-routines-count');
+  if (countEl) countEl.textContent = count;
+}
+
+function formatReadableDate(isoString) {
+  if (!isoString) return 'Hoy';
+  const d = new Date(isoString);
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function loadRoutineIntoActive(routineObj) {
+  state.routineList = [...routineObj.exerciseIds];
+  localStorage.setItem('exercisedb_current_routine_name', routineObj.name);
+  localStorage.setItem('exercisedb_current_routine_date', routineObj.createdAt);
+  
+  const titleInput = document.getElementById('routine-name-input');
+  if (titleInput) titleInput.value = routineObj.name;
+  
+  const dateDisplay = document.getElementById('routine-date-display');
+  if (dateDisplay) dateDisplay.textContent = `📅 Creada el ${formatReadableDate(routineObj.createdAt)}`;
+
+  saveRoutine();
+  applyFilters();
+  document.getElementById('saved-routines-modal').classList.remove('open');
+}
+
+function saveCurrentActiveRoutine() {
+  if (state.routineList.length === 0) {
+    alert('Tu rutina actual está vacía. Añade algún ejercicio antes de guardarla.');
+    return;
+  }
+  const titleInput = document.getElementById('routine-name-input');
+  const routineName = titleInput ? titleInput.value.trim() || 'Mi Rutina' : 'Mi Rutina';
+  const nowIso = new Date().toISOString();
+
+  const routines = getSavedRoutines();
+  // Check if updating existing by name or creating new
+  const existingIdx = routines.findIndex(r => r.name.toLowerCase() === routineName.toLowerCase());
+  
+  if (existingIdx >= 0) {
+    if (confirm(`Ya existe una rutina llamada "${routineName}". ¿Deseas actualizarla?`)) {
+      routines[existingIdx].exerciseIds = [...state.routineList];
+      routines[existingIdx].updatedAt = nowIso;
+      saveRoutinesToStorage(routines);
+      alert(`✅ Rutina "${routineName}" actualizada.`);
+    }
+  } else {
+    routines.unshift({
+      id: 'routine_' + Date.now(),
+      name: routineName,
+      createdAt: nowIso,
+      exerciseIds: [...state.routineList]
+    });
+    saveRoutinesToStorage(routines);
+    alert(`✅ Rutina "${routineName}" guardada correctamente con fecha ${formatReadableDate(nowIso)}.`);
+  }
+
+  localStorage.setItem('exercisedb_current_routine_name', routineName);
+  localStorage.setItem('exercisedb_current_routine_date', nowIso);
+  const dateDisplay = document.getElementById('routine-date-display');
+  if (dateDisplay) dateDisplay.textContent = `📅 Creada el ${formatReadableDate(nowIso)}`;
+}
+
+function renderSavedRoutinesModal() {
+  const container = document.getElementById('saved-routines-list');
+  const routines = getSavedRoutines();
+  container.innerHTML = '';
+
+  if (routines.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:30px 10px;color:var(--text-secondary);">
+        <p style="font-size:32px;margin-bottom:8px">📭</p>
+        <p style="font-weight:700;margin-bottom:4px">No tienes ninguna rutina guardada</p>
+        <p style="font-size:12px;color:var(--text-tertiary)">Crea una rutina en el panel y pulsa "💾 Guardar Rutina".</p>
+      </div>`;
+    return;
+  }
+
+  routines.forEach((r, idx) => {
+    const card = document.createElement('div');
+    card.className = 'saved-routine-card';
+    card.innerHTML = `
+      <div class="saved-routine-info">
+        <h4>${r.name}</h4>
+        <p>📅 ${formatReadableDate(r.createdAt)} · <strong>${r.exerciseIds.length} ejercicios</strong></p>
+      </div>
+      <div class="saved-routine-btns">
+        <button class="routine-act-btn primary load-r-btn">Cargar</button>
+        <button class="routine-act-btn delete-r-btn" style="color:#f87171;border-color:rgba(239,68,68,0.3);">🗑️</button>
+      </div>`;
+
+    card.querySelector('.load-r-btn').addEventListener('click', () => loadRoutineIntoActive(r));
+    card.querySelector('.delete-r-btn').addEventListener('click', () => {
+      if (confirm(`¿Eliminar la rutina "${r.name}"?`)) {
+        routines.splice(idx, 1);
+        saveRoutinesToStorage(routines);
+        renderSavedRoutinesModal();
+      }
+    });
+    container.appendChild(card);
+  });
+}
+
 // ── Wire Events ──────────────────────────────
 function wireEvents() {
+  // Routine Manager handlers
+  const saveRoutineBtn = document.getElementById('save-as-new-routine-btn');
+  const openSavedBtn = document.getElementById('open-saved-routines-btn');
+  const savedModal = document.getElementById('saved-routines-modal');
+  const closeSavedModal = document.getElementById('close-saved-routines-modal');
+  const routineNameInput = document.getElementById('routine-name-input');
+
+  if (saveRoutineBtn) saveRoutineBtn.addEventListener('click', saveCurrentActiveRoutine);
+  if (openSavedBtn) {
+    openSavedBtn.addEventListener('click', () => {
+      renderSavedRoutinesModal();
+      savedModal.classList.add('open');
+    });
+  }
+  if (closeSavedModal) closeSavedModal.addEventListener('click', () => savedModal.classList.remove('open'));
+  if (savedModal) savedModal.addEventListener('click', e => { if (e.target === savedModal) savedModal.classList.remove('open'); });
+
+  if (routineNameInput) {
+    const savedName = localStorage.getItem('exercisedb_current_routine_name');
+    if (savedName) routineNameInput.value = savedName;
+    const savedDate = localStorage.getItem('exercisedb_current_routine_date');
+    const dateDisplay = document.getElementById('routine-date-display');
+    if (dateDisplay && savedDate) dateDisplay.textContent = `📅 Creada el ${formatReadableDate(savedDate)}`;
+
+    routineNameInput.addEventListener('input', () => {
+      localStorage.setItem('exercisedb_current_routine_name', routineNameInput.value);
+    });
+  }
+  updateSavedRoutinesCount();
+
   searchEl.addEventListener('input', debounce(e => {
     state.search = e.target.value;
     searchClearEl.classList.toggle('visible', !!state.search);
@@ -1059,5 +1209,19 @@ if ('serviceWorker' in navigator) {
 
 window.addEventListener('DOMContentLoaded', init);
 </script>
+
+<!-- Saved Routines Modal -->
+<div class="modal-overlay" id="saved-routines-modal" role="dialog" aria-modal="true">
+  <div class="modal-panel" style="max-width:540px;">
+    <div class="modal-header">
+      <h2 class="modal-title">📁 Mis Rutinas Guardadas</h2>
+      <button class="modal-close" id="close-saved-routines-modal">✕</button>
+    </div>
+    <div class="saved-routines-list" id="saved-routines-list">
+      <!-- Injected dynamically -->
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

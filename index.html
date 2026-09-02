@@ -986,15 +986,23 @@ function wireEvents() {
 
   apiKeySaveBtn.addEventListener('click', () => {
     const key = apiKeyInput.value.trim();
-    if (!key.startsWith('AIza')) {
+    if (key.length < 10) {
       apiKeyInput.style.borderColor = '#f87171';
+      apiKeyInput.placeholder = '⚠️ Pega aquí la API Key completa (AIza...)';
       return;
     }
-    localStorage.setItem('gemini_api_key', key);
-    aiSetupScreen.style.display = 'none';
-    aiChatScreen.style.display = 'flex';
-    aiChatScreen.style.flexDirection = 'column';
-    addBotMessage(greetingMessage());
+    apiKeyInput.style.borderColor = '#4ade80';
+    apiKeySaveBtn.textContent = '✅ Guardando...';
+    apiKeySaveBtn.disabled = true;
+    setTimeout(() => {
+      localStorage.setItem('gemini_api_key', key);
+      aiSetupScreen.style.display = 'none';
+      aiChatScreen.style.display = 'flex';
+      aiChatScreen.style.flexDirection = 'column';
+      apiKeySaveBtn.textContent = 'Guardar y Activar 🚀';
+      apiKeySaveBtn.disabled = false;
+      addBotMessage(greetingMessage());
+    }, 400);
   });
 
   // Send message

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'exercisedb-pwa-v3-routine';
+const CACHE_NAME = 'exercisedb-pwa-v4-coach';
 const MEDIA_CACHE = 'exercisedb-media-v1';
 
 const STATIC_ASSETS = [
@@ -33,11 +33,9 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Network-first for index.html/app shell so updates appear immediately
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // If requesting images or videos (gifs) -> cache first
   if (url.pathname.includes('/images/') || url.pathname.includes('/videos/')) {
     event.respondWith(
       caches.open(MEDIA_CACHE).then(async (cache) => {
@@ -57,7 +55,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network first for index.html and root, fallback to cache
+  // Always Network-First for HTML/App Shell to ensure no stale cache
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {

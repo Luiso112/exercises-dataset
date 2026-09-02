@@ -1,4 +1,4 @@
-const CACHE_NAME = 'exercisedb-pwa-v8-additive-chips';
+const CACHE_NAME = 'exercisedb-pwa-v9-dnd-timer-ai-upgrade';
 const MEDIA_CACHE = 'exercisedb-media-v1';
 
 const STATIC_ASSETS = [

@@ -94,6 +94,95 @@
     .ai-trainer-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;background:var(--ai-grad);color:#fff;font-size:12.5px;font-weight:700;box-shadow:0 4px 12px rgba(124,58,237,0.4);white-space:nowrap;transition:all 0.2s ease;}
     .ai-trainer-btn:hover{box-shadow:0 6px 18px rgba(124,58,237,0.55);transform:translateY(-1px);}
 
+    
+    /* ── Touch Optimization: Larger Buttons & Better Spacing ── */
+    .timer-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+    .timer-label { font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; }
+    .timer-left-display { display: flex; align-items: center; gap: 10px; }
+    .timer-btn {
+      padding: 8px 14px;
+      min-height: 38px;
+      min-width: 44px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .timer-btn:active { transform: scale(0.94); }
+    .timer-btn-add { background: rgba(34, 197, 94, 0.14); color: #4ade80; border-color: rgba(34, 197, 94, 0.3); }
+    .timer-btn-add:hover { background: rgba(34, 197, 94, 0.25); }
+    .timer-btn-sub { background: rgba(239, 68, 68, 0.14); color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
+    .timer-btn-sub:hover { background: rgba(239, 68, 68, 0.25); }
+    .timer-btn-reset { background: rgba(255, 255, 255, 0.08); color: var(--text-tertiary); }
+    .timer-btn-reset:hover { background: rgba(239, 68, 68, 0.25); color: #f87171; }
+
+    .card-select-btn {
+      width: 40px !important;
+      height: 40px !important;
+      font-size: 18px !important;
+      top: 10px !important;
+      right: 10px !important;
+    }
+    .reorder-bar {
+      padding: 8px 12px;
+      gap: 8px;
+    }
+    .reorder-btn {
+      padding: 8px 14px !important;
+      min-height: 36px !important;
+      font-size: 12.5px !important;
+    }
+    .drag-handle-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-sm);
+      color: #9da1b0;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+    .drag-handle-btn:active { cursor: grabbing; }
+
+    .routine-act-btn {
+      padding: 10px 16px !important;
+      min-height: 40px !important;
+      font-size: 13.5px !important;
+    }
+    .clear-routine-btn {
+      padding: 10px 16px !important;
+      min-height: 40px !important;
+      font-size: 13px !important;
+    }
+    .ai-quick-chip {
+      padding: 8px 15px !important;
+      min-height: 38px !important;
+      font-size: 13px !important;
+    }
+
+    /* Drag and Drop Visual Feedback */
+    .exercise-card.dragging {
+      opacity: 0.45;
+      transform: scale(0.96);
+      border: 2px dashed var(--accent) !important;
+    }
+    .exercise-card.drag-over {
+      border-top: 3px solid #ff7700 !important;
+      box-shadow: 0 -6px 16px rgba(255, 85, 0, 0.4) !important;
+    }
+
     /* Rest Timer Bar */
     .rest-timer-bar{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:8px 14px;display:flex;align-items:center;justify-content:space-between;margin:12px 16px 0;}
     .timer-display{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent);}
@@ -363,17 +452,19 @@
       </button>
     </div>
 
-    <!-- Rest Timer -->
+    <!-- Rest Timer with Add/Subtract Controls & Larger Hit-Targets -->
     <div class="rest-timer-bar">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;">⏱️ Descanso:</span>
+      <div class="timer-left-display">
+        <span class="timer-label">⏱️ Descanso:</span>
         <span class="timer-display" id="timer-display">00:00</span>
       </div>
       <div class="timer-buttons">
-        <button class="timer-btn" data-time="30">+30s</button>
-        <button class="timer-btn" data-time="60">+60s</button>
-        <button class="timer-btn" data-time="90">+90s</button>
-        <button class="timer-btn" id="timer-reset-btn" style="background:rgba(239,68,68,0.2);color:#f87171;">✕</button>
+        <button class="timer-btn timer-btn-sub" data-adjust="-30">-30s</button>
+        <button class="timer-btn timer-btn-sub" data-adjust="-15">-15s</button>
+        <button class="timer-btn timer-btn-add" data-adjust="15">+15s</button>
+        <button class="timer-btn timer-btn-add" data-adjust="30">+30s</button>
+        <button class="timer-btn timer-btn-add" data-adjust="60">+60s</button>
+        <button class="timer-btn timer-btn-reset" id="timer-reset-btn">✕</button>
       </div>
     </div>
 
@@ -725,25 +816,119 @@ function renderPage(reset = false) {
   state.page++;
 }
 
-// ── Timer ────────────────────────────────────
-function startTimer(s) {
-  clearInterval(timerInterval);
-  remainingSeconds = s;
-  updateTimerDisplay();
-  timerInterval = setInterval(() => {
-    remainingSeconds--;
-    if (remainingSeconds <= 0) {
-      clearInterval(timerInterval);
-      remainingSeconds = 0;
-      if ('vibrate' in navigator) navigator.vibrate([200,100,200]);
+
+// ── DRAG AND DROP REORDERING ──────────────────
+let draggedExerciseId = null;
+
+function setupCardDragEvents(card, id) {
+  card.addEventListener('dragstart', (e) => {
+    draggedExerciseId = id;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  });
+
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    document.querySelectorAll('.exercise-card.drag-over').forEach(c => c.classList.remove('drag-over'));
+  });
+
+  card.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    card.classList.add('drag-over');
+  });
+
+  card.addEventListener('dragleave', () => {
+    card.classList.remove('drag-over');
+  });
+
+  card.addEventListener('drop', (e) => {
+    e.preventDefault();
+    card.classList.remove('drag-over');
+    const sourceId = draggedExerciseId || e.dataTransfer.getData('text/plain');
+    const targetId = id;
+
+    if (sourceId && targetId && sourceId !== targetId) {
+      const srcIdx = state.routineList.indexOf(sourceId);
+      const tgtIdx = state.routineList.indexOf(targetId);
+      if (srcIdx !== -1 && tgtIdx !== -1) {
+        state.routineList.splice(srcIdx, 1);
+        state.routineList.splice(tgtIdx, 0, sourceId);
+        saveRoutine();
+        applyFilters();
+      }
     }
-    updateTimerDisplay();
-  }, 1000);
+  });
+
+  // Touch Support for Mobile Drag (Long-press / Touch Move)
+  let touchStartY = 0;
+  card.addEventListener('touchstart', (e) => {
+    if (e.target.closest('.drag-handle-btn')) {
+      touchStartY = e.touches[0].clientY;
+      draggedExerciseId = id;
+    }
+  }, { passive: true });
+
+  card.addEventListener('touchmove', (e) => {
+    if (!draggedExerciseId || draggedExerciseId !== id) return;
+    const touch = e.touches[0];
+    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetCard = elemBelow ? elemBelow.closest('.exercise-card') : null;
+    document.querySelectorAll('.exercise-card.drag-over').forEach(c => c.classList.remove('drag-over'));
+    if (targetCard && targetCard !== card) {
+      targetCard.classList.add('drag-over');
+    }
+  }, { passive: true });
+
+  card.addEventListener('touchend', (e) => {
+    if (!draggedExerciseId || draggedExerciseId !== id) return;
+    const touch = e.changedTouches[0];
+    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetCard = elemBelow ? elemBelow.closest('.exercise-card') : null;
+    document.querySelectorAll('.exercise-card.drag-over').forEach(c => c.classList.remove('drag-over'));
+    
+    if (targetCard && targetCard.dataset.id && targetCard.dataset.id !== id) {
+      const srcIdx = state.routineList.indexOf(id);
+      const tgtIdx = state.routineList.indexOf(targetCard.dataset.id);
+      if (srcIdx !== -1 && tgtIdx !== -1) {
+        state.routineList.splice(srcIdx, 1);
+        state.routineList.splice(tgtIdx, 0, id);
+        saveRoutine();
+        applyFilters();
+      }
+    }
+    draggedExerciseId = null;
+  });
 }
+
+// ── ADJUSTABLE TIMER (+/- DELTA) ─────────────
+function adjustTimer(deltaSeconds) {
+  remainingSeconds += deltaSeconds;
+  if (remainingSeconds < 0) remainingSeconds = 0;
+  updateTimerDisplay();
+
+  // If timer was stopped and we added time, start countdown
+  if (remainingSeconds > 0 && !timerInterval) {
+    timerInterval = setInterval(() => {
+      remainingSeconds--;
+      if (remainingSeconds <= 0) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        remainingSeconds = 0;
+        if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+      }
+      updateTimerDisplay();
+    }, 1000);
+  }
+}
+
 function updateTimerDisplay() {
   const m = Math.floor(remainingSeconds/60), s = remainingSeconds%60;
-  timerDisplay.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const disp = document.getElementById('timer-display');
+  if (disp) disp.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
+
 
 // ── Exercise Modal ───────────────────────────
 function openModal(id) {
@@ -911,133 +1096,128 @@ function hideTyping() {
   if (typing) typing.remove();
 }
 
-// ── NLP & Advanced Recommendation Engine (Single Dumbbell, TRX, Bodyweight & Multi-Equipment) ──
-function generateSmartRoutine(promptText) {
-  const q = promptText.toLowerCase();
-
-  // 1. Muscle Groups Detection
-  const bodyParts = [];
-  if (q.includes('pecho') || q.includes('pectoral') || q.includes('chest')) bodyParts.push('pecho', 'chest');
-  if (q.includes('espalda') || q.includes('back') || q.includes('dorsal') || q.includes('trapecio')) bodyParts.push('espalda', 'back');
-  if (q.includes('pierna') || q.includes('gluteo') || q.includes('glúteo') || q.includes('cuadricep') || q.includes('cuádricep') || q.includes('isquio') || q.includes('femoral') || q.includes('gemelo') || q.includes('leg')) {
-    bodyParts.push('piernas', 'upper legs', 'lower legs', 'glúteos', 'legs');
-  }
-  if (q.includes('brazo') || q.includes('bicep') || q.includes('bícep') || q.includes('tricep') || q.includes('trícep') || q.includes('antebrazo') || q.includes('arm')) {
-    bodyParts.push('brazos', 'upper arms', 'lower arms', 'arms');
-  }
-  if (q.includes('hombro') || q.includes('deltoid') || q.includes('shoulder')) bodyParts.push('hombros', 'shoulders');
-  if (q.includes('core') || q.includes('abs') || q.includes('abdominal') || q.includes('cintura') || q.includes('oblicuo') || q.includes('waist')) {
-    bodyParts.push('cintura', 'waist', 'core');
-  }
-  if (q.includes('cardio') || q.includes('resistencia') || q.includes('hiit') || q.includes('quemar')) bodyParts.push('cardio');
-
-  // 2. Specialized Equipment Constraints
-  const isTrx = q.includes('trx') || q.includes('suspensi') || q.includes('suspension') || q.includes('correas');
-  const isSingleDumbbell = (q.includes('una mancuerna') || q.includes('1 mancuerna') || q.includes('sola mancuerna') || q.includes('una sola') || q.includes('unilateral') || q.includes('solo una'));
-  const isGeneralDumbbell = !isSingleDumbbell && (q.includes('mancuerna') || q.includes('dumbbell'));
-  const isKettlebell = q.includes('kettlebell') || q.includes('pesa rusa');
-  const isBarbell = q.includes('barra') || q.includes('barbell');
-  const isCable = q.includes('polea') || q.includes('cable');
-  const isBodyweight = q.includes('sin equipo') || q.includes('sin material') || q.includes('casa') || q.includes('corporal') || q.includes('calistenia');
-  const isBands = q.includes('banda') || q.includes('elástica') || q.includes('gomas');
-
-  // 3. Number of exercises
-  let count = 6;
-  const numMatch = q.match(/(\d+)\s*(ejercicio|ejercicios|exerc|ex)/);
-  if (numMatch) count = Math.min(Math.max(parseInt(numMatch[1], 10), 3), 12);
-
-  // 4. Filter Candidates with high precision
-  let candidates = state.exercises.filter(ex => {
-    const fullText = `${ex.name} ${ex.name_en || ''} ${ex.category} ${ex.equipment} ${ex.equipment_en || ''} ${ex.target || ''}`.toLowerCase();
-
-    // Specific TRX Matching
-    if (isTrx) {
-      const matchTrx = fullText.includes('trx') || fullText.includes('suspens') || fullText.includes('straps') || 
-                       fullText.includes('correas') || ex.id === '0498' || ex.id === '0805' || ex.id === '0806' || 
-                       ex.id === '0807' || ex.id === '0808' || ex.id === '0809';
-      if (!matchTrx) return false;
-    }
-    // Specific Single Dumbbell (Unilateral) Matching
-    else if (isSingleDumbbell) {
-      const isDb = fullText.includes('mancuerna') || fullText.includes('dumbbell');
-      const isUni = fullText.includes('un brazo') || fullText.includes('una mano') || fullText.includes('una pierna') || 
-                    fullText.includes('unilateral') || fullText.includes('one arm') || fullText.includes('single arm') || 
-                    fullText.includes('single leg') || fullText.includes('1 arm') || fullText.includes('alternado') || 
-                    fullText.includes('alternating');
-      if (!isDb || !isUni) return false;
-    }
-    // General Dumbbells Matching
-    else if (isGeneralDumbbell) {
-      if (!fullText.includes('mancuerna') && !fullText.includes('dumbbell')) return false;
-    }
-    // Kettlebell Matching
-    else if (isKettlebell) {
-      if (!fullText.includes('kettlebell') && !fullText.includes('pesa rusa')) return false;
-    }
-    // Barbell Matching
-    else if (isBarbell) {
-      if (!fullText.includes('barra') && !fullText.includes('barbell')) return false;
-    }
-    // Cable / Pulley Matching
-    else if (isCable) {
-      if (!fullText.includes('cable') && !fullText.includes('polea')) return false;
-    }
-    // Bodyweight only Matching
-    else if (isBodyweight) {
-      if (!fullText.includes('peso corporal') && !fullText.includes('body weight')) return false;
-    }
-    // Resistance Bands Matching
-    else if (isBands) {
-      if (!fullText.includes('banda') && !fullText.includes('band')) return false;
+// ── HIGH-INTELLIGENCE MULTI-CLAUSE NLP ENGINE ──────────────
+// Parses multi-part requests: e.g. "3 ejercicios de pecho con TRX y 2 con una sola mancuerna"
+function parseMultiClauseRequest(text) {
+  const q = text.toLowerCase();
+  
+  // Split clauses by 'y', ',', 'con', 'ademas', 'más'
+  const rawClauses = q.split(/\s+(?:y|además|ademas|más|mas|\+|,)\s+/i);
+  
+  const clauses = [];
+  
+  rawClauses.forEach(part => {
+    // 1. Extract count for this clause (default 2 or 3)
+    let count = 0;
+    const countMatch = part.match(/(\d+)\s*(?:ejercicio|ejercicios|ex|de\s)?/);
+    if (countMatch) {
+      count = parseInt(countMatch[1], 10);
     }
 
-    // Muscle Group Match (if specified)
-    if (bodyParts.length > 0) {
-      const matchMuscle = bodyParts.some(bp => fullText.includes(bp));
-      if (!matchMuscle) return false;
-    }
+    // 2. Extract muscle for this clause
+    const muscles = [];
+    if (part.includes('pecho') || part.includes('pectoral') || part.includes('chest')) muscles.push('pecho');
+    if (part.includes('espalda') || part.includes('back') || part.includes('dorsal')) muscles.push('espalda');
+    if (part.includes('pierna') || part.includes('cuadricep') || part.includes('isquio') || part.includes('gluteo') || part.includes('glúteo')) muscles.push('piernas');
+    if (part.includes('brazo') || part.includes('bicep') || part.includes('bícep') || part.includes('tricep') || part.includes('trícep')) muscles.push('brazos');
+    if (part.includes('hombro') || part.includes('deltoid')) muscles.push('hombros');
+    if (part.includes('core') || part.includes('abs') || part.includes('abdominal') || part.includes('cintura')) muscles.push('core');
 
-    return true;
-  });
+    // 3. Extract equipment for this clause
+    let equip = null;
+    if (part.includes('trx') || part.includes('suspensi') || part.includes('correas')) equip = 'trx';
+    else if (part.includes('una mancuerna') || part.includes('1 mancuerna') || part.includes('sola mancuerna') || part.includes('unilateral')) equip = '1_mancuerna';
+    else if (part.includes('pesa rusa') || part.includes('kettlebell')) equip = '1_pesa_rusa';
+    else if (part.includes('mancuerna') || part.includes('mancuernas')) equip = 'mancuernas';
+    else if (part.includes('sin equipo') || part.includes('sin material') || part.includes('peso corporal') || part.includes('casa')) equip = 'sin_material';
+    else if (part.includes('barra')) equip = 'barra';
+    else if (part.includes('polea') || part.includes('cable')) equip = 'polea';
 
-  // Fallback if TRX or Single DB yielded fewer than requested count
-  if (candidates.length < count && (isTrx || isSingleDumbbell)) {
-    // If TRX has fewer than count in dataset, take all available TRX
-    if (isTrx) {
-      candidates = state.exercises.filter(ex => {
-        const fullText = `${ex.name} ${ex.name_en || ''}`.toLowerCase();
-        return fullText.includes('trx') || fullText.includes('suspens') || fullText.includes('straps') || 
-               ['0498','0805','0806','0807','0808','0809'].includes(ex.id);
+    if (count > 0 || muscles.length > 0 || equip) {
+      clauses.push({
+        count: count || (equip ? 3 : 2),
+        muscles,
+        equip,
+        raw: part
       });
     }
+  });
+
+  // If no clauses detected or only 1 generic clause, fallback to single smart parser
+  if (clauses.length === 0) {
+    return null;
   }
 
-  // General fallback
-  if (candidates.length === 0) {
-    candidates = state.exercises.filter(ex => {
-      const text = (ex._idx || '').toLowerCase();
-      if (bodyParts.length > 0) return bodyParts.some(bp => text.includes(bp));
-      return true;
+  // Propagate global muscle context if a clause has equipment but didn't repeat the muscle
+  const allMuscles = clauses.flatMap(c => c.muscles);
+  if (allMuscles.length > 0) {
+    clauses.forEach(c => {
+      if (c.muscles.length === 0) c.muscles = [...allMuscles];
     });
   }
 
-  // Shuffle & Pick balanced variety
-  const shuffled = candidates.slice().sort(() => 0.5 - Math.random());
-  const selected = shuffled.slice(0, Math.min(count, candidates.length));
+  return clauses;
+}
 
-  // Build natural explanation
-  let desc = `He preparado tu rutina de **${selected.length} ejercicios** adaptada a tu material:`;
-  if (isSingleDumbbell) desc += `\n• **Equipamiento:** 1 Sola Mancuerna (ejercicios unilaterales estrictos).`;
-  else if (isTrx) desc += `\n• **Equipamiento:** Entrenamiento en Suspensión (TRX).`;
-  else if (isGeneralDumbbell) desc += `\n• **Equipamiento:** Mancuernas.`;
-  else if (isBodyweight) desc += `\n• **Equipamiento:** Peso Corporal (sin material).`;
+function generateSmartRoutine(promptText) {
+  const clauses = parseMultiClauseRequest(promptText);
 
-  if (bodyParts.length > 0) desc += `\n• **Grupo muscular:** ${bodyParts.join(', ')}.`;
+  // If user passed a structured multi-clause request (e.g. "3 de pecho con TRX y 2 con 1 mancuerna")
+  if (clauses && clauses.length > 1) {
+    let finalExercises = [];
+    const usedIds = new Set();
+    let descLines = [];
 
-  return {
-    message: desc,
-    exercises: selected.map(e => ({ id: e.id, name: e.name }))
-  };
+    clauses.forEach(cl => {
+      const equipArray = cl.equip ? [cl.equip] : [];
+      const muscleArray = cl.muscles;
+      const res = matchMultiExercises(equipArray, muscleArray, cl.count);
+      
+      const filteredEx = (res.exercises || []).filter(e => !usedIds.has(e.id)).slice(0, cl.count);
+      filteredEx.forEach(e => {
+        usedIds.add(e.id);
+        finalExercises.push(e);
+      });
+
+      let equipLabel = cl.equip ? cl.equip.replace(/_/g, ' ') : 'General';
+      let muscleLabel = cl.muscles.length > 0 ? cl.muscles.join(', ') : 'Cuerpo completo';
+      descLines.push(`• **${filteredEx.length} ejercicios** de *${muscleLabel}* con *${equipLabel}*`);
+    });
+
+    return {
+      message: `¡Entendido! He construido tu rutina exacta combinando tus especificaciones:\n${descLines.join('\n')}`,
+      exercises: finalExercises
+    };
+  }
+
+  // Single-goal Smart Recommendation
+  const q = promptText.toLowerCase();
+  const bodyParts = [];
+  if (q.includes('pecho') || q.includes('pectoral')) bodyParts.push('pecho');
+  if (q.includes('espalda') || q.includes('dorsal')) bodyParts.push('espalda');
+  if (q.includes('pierna') || q.includes('gluteo') || q.includes('cuadricep') || q.includes('isquio')) bodyParts.push('piernas');
+  if (q.includes('brazo') || q.includes('bicep') || q.includes('tricep')) bodyParts.push('brazos');
+  if (q.includes('hombro') || q.includes('deltoid')) bodyParts.push('hombros');
+  if (q.includes('core') || q.includes('abs') || q.includes('abdominal')) bodyParts.push('core');
+
+  const isTrx = q.includes('trx') || q.includes('suspensi');
+  const isSingleDumbbell = q.includes('una mancuerna') || q.includes('1 mancuerna') || q.includes('sola mancuerna') || q.includes('unilateral');
+  const isKettlebell = q.includes('pesa rusa') || q.includes('kettlebell');
+  const isDumbbell = !isSingleDumbbell && q.includes('mancuerna');
+  const isBodyweight = q.includes('sin equipo') || q.includes('sin material') || q.includes('casa');
+
+  const equips = [];
+  if (isSingleDumbbell) equips.push('1_mancuerna');
+  else if (isTrx) equips.push('trx');
+  else if (isKettlebell) equips.push('1_pesa_rusa');
+  else if (isDumbbell) equips.push('mancuernas');
+  else if (isBodyweight) equips.push('sin_material');
+
+  let count = 6;
+  const numMatch = q.match(/(\d+)\s*(?:ejercicio|ejercicios|ex)/);
+  if (numMatch) count = Math.min(Math.max(parseInt(numMatch[1], 10), 2), 12);
+
+  return matchMultiExercises(equips, bodyParts, count);
 }
 
 
@@ -1354,12 +1534,17 @@ function wireEvents() {
   mobileFilterBtn.addEventListener('click', () => { sidebarEl.classList.add('open'); sidebarCloseBtn.style.display='flex'; });
   sidebarCloseBtn.addEventListener('click', () => sidebarEl.classList.remove('open'));
 
-  document.querySelectorAll('.timer-btn[data-time]').forEach(btn => {
-    btn.addEventListener('click', () => startTimer(parseInt(btn.dataset.time,10)));
+  document.querySelectorAll('.timer-btn[data-adjust]').forEach(btn => {
+    btn.addEventListener('click', () => adjustTimer(parseInt(btn.dataset.adjust, 10)));
   });
-  timerResetBtn.addEventListener('click', () => {
-    clearInterval(timerInterval); remainingSeconds=0; updateTimerDisplay();
-  });
+  const tResetBtn = document.getElementById('timer-reset-btn');
+  if (tResetBtn) {
+    tResetBtn.addEventListener('click', () => {
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+      remainingSeconds = 0;
+      updateTimerDisplay();
+    });
+  }
 
   // AI Panel
   openAiBtn.addEventListener('click', openAIPanel);

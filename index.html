@@ -919,9 +919,24 @@ INSTRUCCIONES ESTRICTAS:
   };
 
   try {
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${savedModel}:generateContent?key=${key}`, {
+    const cleanKey = key.trim();
+    // Support standard keys and OAuth/Bearer tokens (AQ...)
+    const isBearer = cleanKey.startsWith('AQ') || cleanKey.startsWith('ya29');
+    const headers = { 'Content-Type': 'application/json' };
+    let endpoint = '';
+
+    if (isBearer) {
+      headers['Authorization'] = `Bearer ${cleanKey}`;
+      headers['x-goog-api-key'] = cleanKey;
+      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${savedModel}:generateContent`;
+    } else {
+      headers['x-goog-api-key'] = cleanKey;
+      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${savedModel}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+    }
+
+    const resp = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       body: JSON.stringify(body)
     });
 

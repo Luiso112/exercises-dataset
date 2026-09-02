@@ -1,4 +1,4 @@
-const CACHE_NAME = 'exercisedb-pwa-v2';
+const CACHE_NAME = 'exercisedb-pwa-v3-routine';
 const MEDIA_CACHE = 'exercisedb-media-v1';
 
 const STATIC_ASSETS = [
@@ -11,12 +11,12 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS);
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -29,16 +29,15 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Cache-first strategy for media (images & gifs) and app shell
+// Network-first for index.html/app shell so updates appear immediately
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // If requesting images or videos (gifs)
+  // If requesting images or videos (gifs) -> cache first
   if (url.pathname.includes('/images/') || url.pathname.includes('/videos/')) {
     event.respondWith(
       caches.open(MEDIA_CACHE).then(async (cache) => {
@@ -58,19 +57,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for everything else
+  // Network first for index.html and root, fallback to cache
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
+    fetch(event.request)
+      .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
+          const resClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
+            cache.put(event.request, resClone);
           });
         }
         return networkResponse;
-      }).catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(() => caches.match(event.request))
   );
 });

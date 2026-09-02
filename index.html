@@ -883,9 +883,7 @@ function renderPage(reset = false) {
       badgeHtml = `<div class="order-badge">#${rIdx + 1}</div>`;
       reorderHtml = `<div class="reorder-bar">
         <button class="reorder-btn reorder-prev" ${rIdx === 0 ? 'disabled' : ''}>◀ Antes</button>
-        <div class="drag-handle-btn" draggable="true" title="Arrastra para reordenar">
-          <span>☰</span> Arrastrar
-        </div>
+        <span style="font-size:12px;font-weight:800;color:var(--accent);">#${rIdx + 1} (Toca y Arrastra)</span>
         <button class="reorder-btn reorder-next" ${rIdx === state.routineList.length-1 ? 'disabled' : ''}>Después ▶</button>
       </div>`;
     }
@@ -907,8 +905,15 @@ function renderPage(reset = false) {
       </div>`;
 
     card.querySelector('.card-select-btn').addEventListener('click', e => toggleRoutineItem(ex.id, e));
-    card.querySelector('.card-body').addEventListener('click', () => openModal(ex.id));
-    card.querySelector('.card-media').addEventListener('click', e => { if (!e.target.classList.contains('card-select-btn')) openModal(ex.id); });
+    card.querySelector('.card-body').addEventListener('click', () => {
+      if (isRoutineV && draggedExerciseId) return;
+      openModal(ex.id);
+    });
+    card.querySelector('.card-media').addEventListener('click', e => {
+      if (e.target.classList.contains('card-select-btn')) return;
+      if (isRoutineV && draggedExerciseId) return;
+      openModal(ex.id);
+    });
     if (isRoutineV && inRoutine) {
       card.setAttribute('draggable', 'true');
       setupCardDragEvents(card, ex.id);
@@ -967,13 +972,17 @@ function setupCardDragEvents(card, id) {
     }
   });
 
-  // Touch Support for Mobile Drag (Long-press / Touch Move)
+  // Touch Support for Mobile Drag (Full Card Surface Touch & Hold)
   let touchStartY = 0;
   card.addEventListener('touchstart', (e) => {
-    if (e.target.closest('.drag-handle-btn')) {
-      touchStartY = e.touches[0].clientY;
-      draggedExerciseId = id;
+    // If touching buttons (+, ✓, ◀, ▶), allow normal button clicks
+    if (e.target.closest('.card-select-btn') || e.target.closest('.reorder-btn')) {
+      return;
     }
+    touchStartY = e.touches[0].clientY;
+    draggedExerciseId = id;
+    card.classList.add('dragging');
+    triggerHaptic('light');
   }, { passive: true });
 
   card.addEventListener('touchmove', (e) => {
@@ -988,6 +997,7 @@ function setupCardDragEvents(card, id) {
   }, { passive: true });
 
   card.addEventListener('touchend', (e) => {
+    card.classList.remove('dragging');
     if (!draggedExerciseId || draggedExerciseId !== id) return;
     const touch = e.changedTouches[0];
     const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);

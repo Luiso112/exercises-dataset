@@ -1074,12 +1074,15 @@ function renderSavedRoutinesModal() {
     card.className = 'saved-routine-card';
     card.innerHTML = `
       <div class="saved-routine-info">
-        <h4>${r.name}</h4>
-        <p>📅 ${formatReadableDate(r.createdAt)} · <strong>${r.exerciseIds.length} ejercicios</strong></p>
+        <div class="saved-routine-name">${r.name}</div>
+        <div class="saved-routine-meta">
+          <span>📅 ${formatReadableDate(r.createdAt)}</span>
+          <span class="saved-routine-badge">⚡ ${r.exerciseIds.length} ejercicios</span>
+        </div>
       </div>
       <div class="saved-routine-btns">
-        <button class="routine-act-btn primary load-r-btn">Cargar</button>
-        <button class="routine-act-btn delete-r-btn" style="color:#f87171;border-color:rgba(239,68,68,0.3);">🗑️</button>
+        <button class="btn-load-routine load-r-btn">Cargar</button>
+        <button class="btn-delete-routine delete-r-btn" title="Eliminar rutina">🗑️</button>
       </div>`;
 
     card.querySelector('.load-r-btn').addEventListener('click', () => loadRoutineIntoActive(r));

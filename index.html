@@ -779,23 +779,17 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-// ── AI TRAINER ───────────────────────────────
+// ── AI TRAINER (MOTOR INTELIGENTE NATIVO & OFFLINE) ────────
 function initAI() {
-  const key = localStorage.getItem('gemini_api_key');
-  if (key) {
-    aiSetupScreen.style.display = 'none';
-    aiChatScreen.style.display = 'flex';
-    aiChatScreen.style.flexDirection = 'column';
-    if (aiMessages.children.length === 0) addBotMessage(greetingMessage());
-  } else {
-    aiSetupScreen.style.display = 'flex';
-    aiSetupScreen.style.flexDirection = 'column';
-    aiChatScreen.style.display = 'none';
+  aiChatScreen.style.display = 'flex';
+  aiChatScreen.style.flexDirection = 'column';
+  if (aiMessages.children.length === 0) {
+    addBotMessage(greetingMessage());
   }
 }
 
 function greetingMessage() {
-  return `¡Hola! Soy tu Entrenador Personal IA 💪\n\nCuéntame qué quieres trabajar hoy. Por ejemplo:\n• ¿Qué grupos musculares?\n• ¿Cuánto tiempo tienes?\n• ¿Qué equipamiento?\n• ¿Tu nivel y objetivo?\n\nY te generaré la rutina perfecta.`;
+  return `¡Hola Luis! Soy tu Entrenador Personal Inteligente 💪\n\nPuedes pedirme cualquier rutina escribiendo lo que buscas o pulsando los atajos rápidos.\n\nEjemplos:\n• *"Día de pecho y tríceps con mancuernas, 6 ejercicios"*;\n• *"Rutina de piernas intensa"*;\n• *"En casa sin material, 20 minutos"*;\n• *"Espalda y bíceps"*.`;
 }
 
 function openAIPanel() {
@@ -814,7 +808,7 @@ function addBotMessage(text, routineSuggestion = null) {
   const formattedText = text.replace(/\n/g, '<br>');
   let suggestionHtml = '';
   if (routineSuggestion) {
-    const items = routineSuggestion.exercises.slice(0, 12);
+    const items = routineSuggestion.exercises;
     const listHtml = items.map((ex, i) => `
       <div class="ai-routine-ex-item">
         <span class="ai-routine-ex-num">${i+1}</span>
@@ -822,10 +816,10 @@ function addBotMessage(text, routineSuggestion = null) {
       </div>`).join('');
     suggestionHtml = `
       <div class="ai-routine-suggestion" data-ids='${JSON.stringify(items.map(e=>e.id))}'>
-        <div class="ai-routine-suggestion-title">✨ Rutina sugerida — ${items.length} ejercicios</div>
+        <div class="ai-routine-suggestion-title">✨ Rutina Personalizada (${items.length} ejercicios)</div>
         <div class="ai-routine-ex-list">${listHtml}</div>
         <button class="ai-add-routine-btn">
-          ✅ Añadir todos a Mi Rutina
+          ✅ Añadir a Mi Rutina y Empezar
         </button>
       </div>`;
   }
@@ -871,110 +865,113 @@ function hideTyping() {
   if (typing) typing.remove();
 }
 
-async function sendToGemini(userMessage) {
-  const key = localStorage.getItem('gemini_api_key');
-  if (!key) return;
-
-  const savedModel = localStorage.getItem('gemini_model') || 'gemini-3.6-flash';
-  const FALLBACK_MODELS = {
-    'gemini-3.1-pro-preview': 'gemini-3.8-flash',
-    'gemini-3.8-flash':       'gemini-3.7-flash',
-    'gemini-3.7-flash':       'gemini-3.6-flash',
-    'gemini-3.6-flash':       'gemini-3.5-flash',
-    'gemini-3.5-flash':       'gemini-3.5-flash-lite',
-    'gemini-3.5-flash-lite':  'gemini-3.5-flash-lite',
-  };
-
-  aiIsTyping = true;
-  aiSendBtn.disabled = true;
-  aiStatus.textContent = 'Pensando...';
-  showTyping();
-
-  const systemPrompt = `Eres un entrenador personal experto en fitness y musculación. Tu tarea es recomendar ejercicios personalizados basándote en la solicitud del usuario y el siguiente catálogo de ejercicios disponibles en formato JSON compacto (id, n=nombre, c=categoría, b=zona corporal, e=equipamiento, t=músculo objetivo):
-
-${JSON.stringify(EXERCISES_COMPACT)}
-
-INSTRUCCIONES ESTRICTAS:
-1. Analiza la solicitud del usuario: grupos musculares, equipamiento disponible, tiempo, nivel, objetivo.
-2. Selecciona entre 6 y 12 ejercicios del catálogo que mejor encajen.
-3. Responde SIEMPRE con un JSON con este formato exacto:
-{
-  "message": "Texto conversacional al usuario en español explicando brevemente la rutina y por qué es adecuada",
-  "exercises": [
-    {"id": "ID_EXACTO_DEL_CATALOGO", "name": "Nombre del ejercicio"}
-  ]
-}
-4. Solo usa IDs que existan en el catálogo.
-5. NO incluyas nada fuera del JSON. Solo el JSON.`;
-
-  aiChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-
-  const body = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: aiChatHistory,
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 2048,
-    }
-  };
-
-  try {
-    const cleanKey = key.trim();
-    // Support standard keys and OAuth/Bearer tokens (AQ...)
-    const isBearer = cleanKey.startsWith('AQ') || cleanKey.startsWith('ya29');
-    const headers = { 'Content-Type': 'application/json' };
-    let endpoint = '';
-
-    if (isBearer) {
-      headers['Authorization'] = `Bearer ${cleanKey}`;
-      headers['x-goog-api-key'] = cleanKey;
-      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${savedModel}:generateContent`;
-    } else {
-      headers['x-goog-api-key'] = cleanKey;
-      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${savedModel}:generateContent?key=${encodeURIComponent(cleanKey)}`;
-    }
-
-    const resp = await fetch(endpoint, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body)
-    });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `Error ${resp.status}`);
-    }
-
-    const data = await resp.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    aiChatHistory.push({ role: "model", parts: [{ text: rawText }] });
-
-    hideTyping();
-
-    // Parse the JSON response
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      const exercisesWithData = (parsed.exercises || []).map(e => {
-        const full = state.exercises.find(ex => ex.id === e.id);
-        return full ? { id: full.id, name: full.name } : null;
-      }).filter(Boolean);
-
-      addBotMessage(parsed.message, exercisesWithData.length > 0 ? { exercises: exercisesWithData } : null);
-    } else {
-      addBotMessage(rawText);
-    }
-
-  } catch (err) {
-    hideTyping();
-    console.error(err);
-    addBotMessage(`❌ Error al conectar con Gemini: ${err.message}\n\nVerifica que tu API Key es correcta o vuelve a intentarlo.`);
+// ── NLP & Rule-Based Exercise Recommendation Engine ──
+function generateSmartRoutine(promptText) {
+  const q = promptText.toLowerCase();
+  
+  // 1. Detect Muscle Groups & Categories
+  const bodyParts = [];
+  const targetMuscles = [];
+  
+  if (q.includes('pecho') || q.includes('pectoral') || q.includes('chest')) {
+    bodyParts.push('pecho', 'chest');
+    targetMuscles.push('pectorals', 'pecho');
+  }
+  if (q.includes('espalda') || q.includes('back') || q.includes('dorsal')) {
+    bodyParts.push('espalda', 'back');
+    targetMuscles.push('dorsales', 'lats', 'espalda');
+  }
+  if (q.includes('pierna') || q.includes('gluteo') || q.includes('glúteo') || q.includes('cuadricep') || q.includes('cuádricep') || q.includes('isquio') || q.includes('femoral') || q.includes('leg') || q.includes('legs')) {
+    bodyParts.push('piernas', 'upper legs', 'lower legs', 'glúteos', 'legs');
+  }
+  if (q.includes('brazo') || q.includes('bicep') || q.includes('bícep') || q.includes('tricep') || q.includes('trícep') || q.includes('antebrazo') || q.includes('arm')) {
+    bodyParts.push('brazos', 'upper arms', 'lower arms', 'arms');
+  }
+  if (q.includes('hombro') || q.includes('deltoid') || q.includes('shoulder')) {
+    bodyParts.push('hombros', 'shoulders');
+  }
+  if (q.includes('core') || q.includes('abs') || q.includes('abdominal') || q.includes('cintura') || q.includes('waist')) {
+    bodyParts.push('cintura', 'waist', 'core');
+  }
+  if (q.includes('cardio') || q.includes('resistencia') || q.includes('hiit') || q.includes('quemar')) {
+    bodyParts.push('cardio');
   }
 
-  aiIsTyping = false;
-  aiSendBtn.disabled = false;
-  aiStatus.textContent = 'Powered by Gemini';
+  // 2. Detect Equipment Constraints
+  let equipmentFilter = null;
+  if (q.includes('mancuerna') || q.includes('dumbbell')) {
+    equipmentFilter = ['mancuerna', 'dumbbell', 'mancuernas'];
+  } else if (q.includes('barra') || q.includes('barbell')) {
+    equipmentFilter = ['barra', 'barbell'];
+  } else if (q.includes('polea') || q.includes('cable')) {
+    equipmentFilter = ['cable', 'polea'];
+  } else if (q.includes('sin equipo') || q.includes('sin material') || q.includes('casa') || q.includes('corporal') || q.includes('calistenia') || q.includes('body weight')) {
+    equipmentFilter = ['peso corporal', 'body weight'];
+  }
+
+  // 3. Detect Count
+  let count = 6;
+  const numMatch = q.match(/(\d+)\s*(ejercicio|ejercicios|exerc|ex)/);
+  if (numMatch) {
+    count = Math.min(Math.max(parseInt(numMatch[1], 10), 3), 12);
+  }
+
+  // 4. Candidate Matching
+  let candidates = state.exercises.filter(ex => {
+    const text = (ex._idx || '').toLowerCase();
+    
+    // Check equipment if specified
+    if (equipmentFilter) {
+      const hasEquip = equipmentFilter.some(eq => text.includes(eq));
+      if (!hasEquip) return false;
+    }
+    
+    // Check muscle group
+    if (bodyParts.length > 0) {
+      const matchBody = bodyParts.some(bp => text.includes(bp));
+      if (!matchBody) return false;
+    }
+    
+    return true;
+  });
+
+  // Fallback if too specific
+  if (candidates.length < count) {
+    candidates = state.exercises.filter(ex => {
+      const text = (ex._idx || '').toLowerCase();
+      if (bodyParts.length > 0) return bodyParts.some(bp => text.includes(bp));
+      return true;
+    });
+  }
+
+  // Shuffle & Pick balanced variety
+  const shuffled = candidates.slice().sort(() => 0.5 - Math.random());
+  const selected = shuffled.slice(0, count);
+
+  let desc = `He diseñado esta rutina personalizada de **${selected.length} ejercicios** adaptada a tu objetivo.`;
+  if (bodyParts.length > 0) desc += ` Enfocada en **${bodyParts.join(', ')}**.`;
+  if (equipmentFilter) desc += ` Utilizando equipamiento: **${equipmentFilter[0]}**.`;
+
+  return {
+    message: desc,
+    exercises: selected.map(e => ({ id: e.id, name: e.name }))
+  };
+}
+
+function processUserRequest(text) {
+  aiIsTyping = true;
+  aiSendBtn.disabled = true;
+  aiStatus.textContent = 'Analizando catálogo...';
+  showTyping();
+
+  setTimeout(() => {
+    hideTyping();
+    const result = generateSmartRoutine(text);
+    addBotMessage(result.message, result);
+    aiIsTyping = false;
+    aiSendBtn.disabled = false;
+    aiStatus.textContent = 'Entrenador Activo ⚡';
+  }, 500);
 }
 
 // ── Wire Events ──────────────────────────────
@@ -1017,46 +1014,14 @@ function wireEvents() {
   aiPanelClose.addEventListener('click', closeAIPanel);
   aiPanelOverlay.addEventListener('click', e => { if (e.target===aiPanelOverlay) closeAIPanel(); });
 
-  apiKeySaveBtn.addEventListener('click', () => {
-    const key = apiKeyInput.value.trim();
-    if (key.length < 10) {
-      apiKeyInput.style.borderColor = '#f87171';
-      apiKeyInput.placeholder = '⚠️ Pega aquí la API Key completa (AIza...)';
-      return;
-    }
-    apiKeyInput.style.borderColor = '#4ade80';
-    apiKeySaveBtn.textContent = '✅ Guardando...';
-    apiKeySaveBtn.disabled = true;
-    setTimeout(() => {
-      localStorage.setItem('gemini_api_key', key);
-      const modelSelect = document.getElementById('model-select');
-      if (modelSelect) localStorage.setItem('gemini_model', modelSelect.value);
-      aiSetupScreen.style.display = 'none';
-      aiChatScreen.style.display = 'flex';
-      aiChatScreen.style.flexDirection = 'column';
-      apiKeySaveBtn.textContent = 'Guardar y Activar 🚀';
-      apiKeySaveBtn.disabled = false;
-      addBotMessage(greetingMessage());
-    }, 400);
-  });
-
   // Send message
   function handleSend() {
     const text = aiInput.value.trim();
     if (!text || aiIsTyping) return;
-    if (text === '🔑 Cambiar API Key') {
-      localStorage.removeItem('gemini_api_key');
-      aiChatHistory = [];
-      aiMessages.innerHTML = '';
-      aiSetupScreen.style.display = 'flex';
-      aiChatScreen.style.display = 'none';
-      aiInput.value = '';
-      return;
-    }
     addUserMessage(text);
     aiInput.value = '';
     aiInput.style.height = '42px';
-    sendToGemini(text);
+    processUserRequest(text);
   }
 
   aiSendBtn.addEventListener('click', handleSend);
@@ -1072,17 +1037,8 @@ function wireEvents() {
   aiQuickPrompts.querySelectorAll('.ai-quick-prompt').forEach(btn => {
     btn.addEventListener('click', () => {
       const text = btn.textContent;
-      if (text === '🔑 Cambiar API Key') {
-        localStorage.removeItem('gemini_api_key');
-        aiChatHistory = [];
-        aiMessages.innerHTML = '';
-        aiSetupScreen.style.display = 'flex';
-        aiChatScreen.style.display = 'none';
-        return;
-      }
-      if (!localStorage.getItem('gemini_api_key')) return;
       addUserMessage(text);
-      sendToGemini(text);
+      processUserRequest(text);
     });
   });
 
@@ -1095,6 +1051,7 @@ function wireEvents() {
   }, { rootMargin: '200px' });
   obs.observe(sentinelEl);
 }
+
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));

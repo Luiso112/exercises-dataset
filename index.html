@@ -23,8 +23,6 @@
       --accent:         #ff5500;
       --accent-grad:    linear-gradient(135deg, #ff5500, #ff7700);
       --accent-muted:   rgba(255, 85, 0, 0.15);
-      --green:          #22c55e;
-      --green-muted:    rgba(34, 197, 94, 0.15);
       --text-primary:   #f4f4f6;
       --text-secondary: #9da1b0;
       --text-tertiary:  #636779;
@@ -66,7 +64,7 @@
       padding-right: var(--sar);
     }
 
-    /* ── Sidebar (Desktop / iPad) ── */
+    /* ── Sidebar ── */
     .sidebar {
       width: var(--sidebar-w);
       background: var(--bg-surface);
@@ -116,7 +114,7 @@
       gap: 16px;
     }
 
-    /* ── Mode Switcher Tab (Explore vs Routine) ── */
+    /* ── Mode Switcher Tab ── */
     .view-switcher {
       display: flex;
       background: var(--bg-input);
@@ -435,7 +433,26 @@
     .exercise-card:hover .card-thumb { opacity: 0; }
     .exercise-card:hover .card-gif { opacity: 1; }
 
-    /* Checkbox Routine Select Button */
+    /* Order Badge and Checkbox */
+    .order-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      min-width: 26px;
+      height: 26px;
+      padding: 0 6px;
+      border-radius: 13px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
     .card-select-btn {
       position: absolute;
       top: 8px;
@@ -463,16 +480,46 @@
       box-shadow: 0 3px 10px rgba(255, 85, 0, 0.5);
     }
 
+    /* Reorder Control Bar on Cards */
+    .reorder-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+    }
+    .reorder-btn {
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .reorder-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .reorder-btn:not(:disabled):hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
     .card-body {
-      padding: 12px 14px 14px;
+      padding: 10px 12px 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       flex: 1;
       cursor: pointer;
     }
     .card-name {
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 700;
       color: var(--text-primary);
       line-height: 1.35;
@@ -485,21 +532,20 @@
     .card-tags {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 4px;
       margin-top: auto;
     }
     .tag {
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 6px;
+      padding: 2px 7px;
+      border-radius: 5px;
       text-transform: capitalize;
-      letter-spacing: 0.02em;
     }
     .tag-cat { background: rgba(59, 130, 246, 0.16); color: #60a5fa; }
     .tag-equip { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
 
-    /* ── Modal Bottom Sheet on iOS ── */
+    /* ── Modal Bottom Sheet ── */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -903,8 +949,8 @@
     <!-- Routine View Info Banner -->
     <div class="routine-banner" id="routine-banner" style="display:none;">
       <div class="routine-banner-text">
-        <h3 id="routine-banner-title">Mi Sesión de Entrenamiento</h3>
-        <p id="routine-banner-subtitle">Toca la casilla para quitar o añadir ejercicios.</p>
+        <h3 id="routine-banner-title">Orden de mi Rutina</h3>
+        <p id="routine-banner-subtitle">Usa las flechas ◀ ▶ en cada tarjeta para ordenar tus ejercicios.</p>
       </div>
       <button class="clear-routine-btn" id="clear-routine-btn">Vaciar Rutina</button>
     </div>
@@ -159548,7 +159594,7 @@ const EXERCISES = [
     filtered: [],
     search: '',
     currentView: 'explore', // 'explore' | 'routine'
-    routineIds: new Set(JSON.parse(localStorage.getItem('exercisedb_routine') || '[]')),
+    routineList: JSON.parse(localStorage.getItem('exercisedb_routine_order') || '[]'),
     filters: {
       category: new Set(),
       equipment: new Set(),
@@ -159560,11 +159606,9 @@ const EXERCISES = [
 
   const EQUIP_INITIAL = 8;
 
-  // ── Timer State ──
   let timerInterval = null;
   let remainingSeconds = 0;
 
-  // ── DOM Refs ───────────────────────────────────────
   const gridEl              = document.getElementById('exercise-grid');
   const sentinelEl          = document.getElementById('load-sentinel');
   const spinnerEl           = document.getElementById('load-spinner');
@@ -159605,30 +159649,46 @@ const EXERCISES = [
   }
 
   function saveRoutine() {
-    localStorage.setItem('exercisedb_routine', JSON.stringify([...state.routineIds]));
+    localStorage.setItem('exercisedb_routine_order', JSON.stringify(state.routineList));
     updateRoutineBadges();
   }
 
   function updateRoutineBadges() {
-    const c = state.routineIds.size;
+    const c = state.routineList.length;
     sidebarRoutineCount.textContent = c;
     mobileRoutineCount.textContent = c;
   }
 
   function toggleRoutineItem(id, e) {
     if (e) e.stopPropagation();
-    if (state.routineIds.has(id)) {
-      state.routineIds.delete(id);
+    const idx = state.routineList.indexOf(id);
+    if (idx >= 0) {
+      state.routineList.splice(idx, 1);
     } else {
-      state.routineIds.add(id);
+      state.routineList.push(id);
     }
     saveRoutine();
     applyFilters();
     if (activeModalExerciseId === id) updateModalRoutineBtn(id);
   }
 
+  function moveRoutineItem(id, direction, e) {
+    if (e) e.stopPropagation();
+    const idx = state.routineList.indexOf(id);
+    if (idx === -1) return;
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= state.routineList.length) return;
+
+    const temp = state.routineList[idx];
+    state.routineList[idx] = state.routineList[targetIdx];
+    state.routineList[targetIdx] = temp;
+
+    saveRoutine();
+    applyFilters();
+  }
+
   function updateModalRoutineBtn(id) {
-    const inRoutine = state.routineIds.has(id);
+    const inRoutine = state.routineList.includes(id);
     modalRoutineToggle.classList.toggle('in-routine', inRoutine);
     modalRoutineToggle.innerHTML = inRoutine 
       ? '<span>✓ En Mi Rutina (Toca para quitar)</span>' 
@@ -159702,7 +159762,7 @@ const EXERCISES = [
     tabExplore.classList.toggle('active', view === 'explore');
     tabRoutine.classList.toggle('active', view === 'routine');
     mobileModeBtn.textContent = view === 'explore' 
-      ? `🔥 Rutina (${state.routineIds.size})`
+      ? `🔥 Rutina (${state.routineList.length})`
       : '📚 Ver Todos';
     mobileModeBtn.style.background = view === 'explore' ? 'var(--accent)' : 'var(--bg-elevated)';
     
@@ -159712,11 +159772,14 @@ const EXERCISES = [
   }
 
   function applyFilters() {
-    let list = state.exercises;
+    let list = [];
 
-    // Filter by routine mode
     if (state.currentView === 'routine') {
-      list = list.filter(e => state.routineIds.has(e.id));
+      // Map in exact ordered sequence
+      const map = new Map(state.exercises.map(e => [e.id, e]));
+      list = state.routineList.map(id => map.get(id)).filter(Boolean);
+    } else {
+      list = state.exercises;
     }
 
     if (state.search) {
@@ -159786,7 +159849,7 @@ const EXERCISES = [
           <div class="empty-state">
             <p style="font-size:32px;margin-bottom:8px">📋</p>
             <p style="font-size:18px;font-weight:700;margin-bottom:6px">Tu rutina está vacía</p>
-            <p style="color:var(--text-tertiary);margin-bottom:14px">Explora la biblioteca y toca el botón '+' o la casilla de cualquier ejercicio para añadirlo a tu sesión de hoy.</p>
+            <p style="color:var(--text-tertiary);margin-bottom:14px">Explora la biblioteca y toca el botón '+' de cualquier ejercicio para añadirlo a tu sesión de hoy.</p>
             <button class="timer-btn" style="padding:8px 16px;background:var(--accent);color:#fff;" onclick="switchView('explore')">Ver todos los ejercicios</button>
           </div>
         `;
@@ -159800,18 +159863,45 @@ const EXERCISES = [
     const end = Math.min(start + state.pageSize, state.filtered.length);
     const slice = state.filtered.slice(start, end);
 
-    slice.forEach(ex => {
-      const inRoutine = state.routineIds.has(ex.id);
+    slice.forEach((ex, sliceIndex) => {
+      const globalIndex = start + sliceIndex;
+      const inRoutine = state.routineList.includes(ex.id);
+      const routineIndex = inRoutine ? state.routineList.indexOf(ex.id) : -1;
+      const isRoutineMode = state.currentView === 'routine';
+
       const card = document.createElement('div');
       card.className = 'exercise-card' + (inRoutine ? ' in-routine' : '');
+      
+      let orderBadgeHtml = '';
+      let reorderBarHtml = '';
+
+      if (isRoutineMode) {
+        orderBadgeHtml = `<div class="order-badge">#${routineIndex + 1}</div>`;
+        const isFirst = routineIndex === 0;
+        const isLast = routineIndex === state.routineList.length - 1;
+        reorderBarHtml = `
+          <div class="reorder-bar">
+            <button class="reorder-btn reorder-prev" ${isFirst ? 'disabled' : ''} title="Mover antes">
+              ◀ Mover antes
+            </button>
+            <span style="font-size:11px;font-weight:800;color:var(--accent);">#${routineIndex + 1}</span>
+            <button class="reorder-btn reorder-next" ${isLast ? 'disabled' : ''} title="Mover después">
+              Mover después ▶
+            </button>
+          </div>
+        `;
+      }
+
       card.innerHTML = `
         <div class="card-media">
+          ${orderBadgeHtml}
           <button class="card-select-btn ${inRoutine ? 'checked' : ''}" title="${inRoutine ? 'Quitar de la rutina' : 'Añadir a la rutina'}">
             ${inRoutine ? '✓' : '+'}
           </button>
           <img class="card-thumb" src="${ex.image}" alt="${ex.name}" loading="lazy" />
           <img class="card-gif" src="${ex.gif_url}" alt="${ex.name}" loading="lazy" />
         </div>
+        ${reorderBarHtml}
         <div class="card-body">
           <div class="card-name">${ex.name}</div>
           <div class="card-tags">
@@ -159826,6 +159916,13 @@ const EXERCISES = [
       card.querySelector('.card-media').addEventListener('click', (e) => {
         if (!e.target.classList.contains('card-select-btn')) openModal(ex.id);
       });
+
+      if (isRoutineMode) {
+        const prevBtn = card.querySelector('.reorder-prev');
+        const nextBtn = card.querySelector('.reorder-next');
+        if (prevBtn) prevBtn.addEventListener('click', (e) => moveRoutineItem(ex.id, -1, e));
+        if (nextBtn) nextBtn.addEventListener('click', (e) => moveRoutineItem(ex.id, 1, e));
+      }
 
       gridEl.appendChild(card);
     });
@@ -159981,7 +160078,7 @@ const EXERCISES = [
 
     clearRoutineBtn.addEventListener('click', () => {
       if (confirm('¿Vaciar todos los ejercicios de tu rutina actual?')) {
-        state.routineIds.clear();
+        state.routineList = [];
         saveRoutine();
         applyFilters();
       }
@@ -160012,7 +160109,6 @@ const EXERCISES = [
       });
     }
 
-    // Timer buttons
     document.querySelectorAll('.timer-btn[data-time]').forEach(btn => {
       btn.addEventListener('click', () => {
         const t = parseInt(btn.dataset.time, 10);
@@ -160025,7 +160121,6 @@ const EXERCISES = [
       updateTimerDisplay();
     });
 
-    // Infinite scroll
     const obs = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && state.page * state.pageSize < state.filtered.length) {
         spinnerEl.classList.add('visible');

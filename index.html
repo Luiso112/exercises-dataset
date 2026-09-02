@@ -229,6 +229,56 @@
     .ai-send-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
 
     /* Quick prompts */
+    
+    /* Additive Quick Chips for AI Trainer */
+    .ai-chip-selector-bar {
+      padding: 8px 14px 4px;
+      background: #141417;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ai-chip-group-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #a855f7;
+      letter-spacing: 0.02em;
+    }
+    .ai-quick-prompts {
+      display: flex;
+      gap: 6px;
+      padding-bottom: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ai-quick-chip {
+      padding: 6px 12px;
+      border-radius: 16px;
+      background: #202026;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #d1d5db;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .ai-quick-chip:hover {
+      border-color: #a855f7;
+      color: #fff;
+    }
+    .ai-quick-chip.active {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      border-color: transparent;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.45);
+    }
+
     .ai-quick-prompts{display:flex;gap:6px;padding:0 16px 10px;overflow-x:auto;flex-shrink:0;}
     .ai-quick-prompt{padding:6px 12px;border-radius:16px;background:var(--ai-muted);border:1px solid rgba(124,58,237,0.3);color:#c084fc;font-size:11.5px;font-weight:600;white-space:nowrap;cursor:pointer;}
     .ai-quick-prompt:hover{background:rgba(124,58,237,0.25);}
@@ -364,53 +414,45 @@
   </div>
 </div>
 
-<!-- AI Trainer Panel -->
+<!-- AI Trainer Panel with Additive Combinable Tags & Chat -->
 <div class="ai-panel-overlay" id="ai-panel-overlay">
   <div class="ai-panel">
     <div class="ai-panel-header">
       <div class="ai-avatar">🤖</div>
       <div class="ai-header-info">
-        <div class="ai-header-name">Entrenador Personal IA</div>
-        <div class="ai-header-status" id="ai-status">Powered by Gemini</div>
+        <div class="ai-header-name">Entrenador Personal Inteligente</div>
+        <div class="ai-header-status" id="ai-status">Activo · 100% Offline</div>
       </div>
       <button class="ai-panel-close" id="ai-panel-close">✕</button>
     </div>
 
-    <!-- Setup Screen (when no API key) -->
-    <div class="ai-setup-screen" id="ai-setup-screen" style="display:none;">
-      <div class="ai-setup-icon">🔑</div>
-      <div class="ai-setup-title">Conecta tu Entrenador IA</div>
-      <div class="ai-setup-desc">
-        Necesitas una API Key gratuita de Google AI Studio. La clave se guarda solo en tu dispositivo y nunca se comparte.
-      </div>
-      <a class="ai-key-link" href="https://aistudio.google.com/app/apikey" target="_blank">
-        → Obtener API Key gratuita en aistudio.google.com
-      </a>
-      <input class="ai-key-input" id="api-key-input" type="password" placeholder="Pega aquí tu API Key (AIza...)" />
-      <select id="model-select" style="width:100%;max-width:400px;padding:10px 14px;background:#1e1e24;border:1px solid rgba(124,58,237,0.4);border-radius:12px;color:#f4f4f6;font-size:13.5px;outline:none;">
-        <option value="gemini-3.5-flash-lite">⚡ Gemini 3.5 Flash-Lite — Más rápido y ligero</option>
-        <option value="gemini-3.5-flash">🔵 Gemini 3.5 Flash — Gratis, equilibrado</option>
-        <option value="gemini-3.6-flash" selected>🟢 Gemini 3.6 Flash — Recomendado (gratis)</option>
-        <option value="gemini-3.7-flash">🚀 Gemini 3.7 Flash — Más potente</option>
-        <option value="gemini-3.8-flash">⭐ Gemini 3.8 Flash — Último y más avanzado</option>
-        <option value="gemini-3.1-pro-preview">💎 Gemini 3.1 Pro — Máxima calidad (requiere Pro)</option>
-      </select>
-      <button class="ai-key-submit-btn" id="api-key-save-btn">Guardar y Activar 🚀</button>
-    </div>
-
-    <!-- Chat Screen -->
-    <div id="ai-chat-screen" style="flex:1;display:none;flex-direction:column;overflow:hidden;">
+    <!-- Chat & Filter Container -->
+    <div id="ai-chat-screen" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
       <div class="ai-messages" id="ai-messages"></div>
-      <div class="ai-quick-prompts" id="ai-quick-prompts">
-        <button class="ai-quick-prompt">💪 Trabajar pecho hoy</button>
-        <button class="ai-quick-prompt">🦵 Día de piernas</button>
-        <button class="ai-quick-prompt">🏋️ Sin equipo, 30 min</button>
-        <button class="ai-quick-prompt">🧘 Movilidad y core</button>
-        <button class="ai-quick-prompt">🔥 Full body intenso</button>
-        <button class="ai-quick-prompt">🔑 Cambiar API Key</button>
+
+      <!-- Additive Multi-Select Equipments & Muscle Filters -->
+      <div class="ai-chip-selector-bar">
+        <div class="ai-chip-group-label">⚡ Combina tus materiales y grupos (toca varios a la vez):</div>
+        <div class="ai-quick-prompts" id="ai-quick-prompts">
+          <!-- Equipment Additive Chips -->
+          <button class="ai-quick-chip" data-type="equip" data-val="1_mancuerna">🏋️ 1 Sola Mancuerna</button>
+          <button class="ai-quick-chip" data-type="equip" data-val="trx">🎗️ TRX (Suspensión)</button>
+          <button class="ai-quick-chip" data-type="equip" data-val="1_pesa_rusa">🔔 1 Pesa Rusa (Kettlebell)</button>
+          <button class="ai-quick-chip" data-type="equip" data-val="mancuernas">🏋️ Mancuernas</button>
+          <button class="ai-quick-chip" data-type="equip" data-val="sin_material">🤸 Sin Material</button>
+          <button class="ai-quick-chip" data-type="equip" data-val="bandas">➰ Bandas Elásticas</button>
+          <!-- Muscle Additive Chips -->
+          <button class="ai-quick-chip" data-type="muscle" data-val="pecho">💪 Pecho</button>
+          <button class="ai-quick-chip" data-type="muscle" data-val="espalda">🦅 Espalda</button>
+          <button class="ai-quick-chip" data-type="muscle" data-val="piernas">🦵 Piernas</button>
+          <button class="ai-quick-chip" data-type="muscle" data-val="brazos">💪 Brazos</button>
+          <button class="ai-quick-chip" data-type="muscle" data-val="hombros">🛡️ Hombros</button>
+          <button class="ai-quick-chip" data-type="muscle" data-val="core">🔥 Abdominales/Core</button>
+        </div>
       </div>
+
       <div class="ai-input-bar">
-        <textarea class="ai-input" id="ai-input" placeholder="Ej: quiero trabajar espalda y bíceps, tengo barra y polea, 45 min..." rows="1"></textarea>
+        <textarea class="ai-input" id="ai-input" placeholder="O escribe tu petición (ej: 6 ejercicios de espalda y tríceps con 1 mancuerna y TRX)..." rows="1"></textarea>
         <button class="ai-send-btn" id="ai-send-btn">➤</button>
       </div>
     </div>
@@ -998,6 +1040,127 @@ function generateSmartRoutine(promptText) {
   };
 }
 
+
+// ── ADDITIVE FILTERS & SMART MULTI-EQUIPMENT ENGINE ────────
+const activeAiSelections = {
+  equipments: new Set(),
+  muscles: new Set()
+};
+
+function generateAdditiveRoutine() {
+  const equips = Array.from(activeAiSelections.equipments);
+  const muscles = Array.from(activeAiSelections.muscles);
+
+  if (equips.length === 0 && muscles.length === 0) {
+    processUserRequest('full body general 6 ejercicios');
+    return;
+  }
+
+  // Build prompt description text
+  let promptParts = [];
+  if (muscles.length > 0) promptParts.push(`Músculos: ${muscles.join(', ')}`);
+  if (equips.length > 0) promptParts.push(`Equipamiento: ${equips.join(' + ')}`);
+
+  const userQuery = promptParts.join(' | ');
+  addUserMessage(`🎯 Filtros seleccionados:\n• ${promptParts.join('\n• ')}`);
+
+  aiIsTyping = true;
+  aiSendBtn.disabled = true;
+  aiStatus.textContent = 'Combinando ejercicios...';
+  showTyping();
+
+  setTimeout(() => {
+    hideTyping();
+    const result = matchMultiExercises(equips, muscles, 6);
+    addBotMessage(result.message, result);
+    aiIsTyping = false;
+    aiSendBtn.disabled = false;
+    aiStatus.textContent = 'Entrenador Activo ⚡';
+  }, 400);
+}
+
+function matchMultiExercises(equips, muscles, requestedCount = 6) {
+  let matched = [];
+
+  // Filter exercises matching ANY of the active equipments (if any selected) AND ANY of the muscles (if any)
+  matched = state.exercises.filter(ex => {
+    const fullText = `${ex.name} ${ex.name_en || ''} ${ex.category} ${ex.equipment} ${ex.equipment_en || ''} ${ex.target || ''}`.toLowerCase();
+
+    // 1. Equipment check (Additive: matches if it fits AT LEAST ONE selected equipment)
+    if (equips.length > 0) {
+      const matchAnyEquip = equips.some(eq => {
+        if (eq === '1_mancuerna') {
+          const isDb = fullText.includes('mancuerna') || fullText.includes('dumbbell');
+          const isUni = fullText.includes('un brazo') || fullText.includes('una mano') || fullText.includes('una pierna') || 
+                        fullText.includes('unilateral') || fullText.includes('one arm') || fullText.includes('single arm') || 
+                        fullText.includes('single leg') || fullText.includes('1 arm') || fullText.includes('alternado');
+          return isDb && isUni;
+        }
+        if (eq === 'trx') {
+          return fullText.includes('trx') || fullText.includes('suspens') || fullText.includes('straps') || 
+                 fullText.includes('correas') || ['0498','0805','0806','0807','0808','0809'].includes(ex.id);
+        }
+        if (eq === '1_pesa_rusa') {
+          const isKb = fullText.includes('kettlebell') || fullText.includes('pesa rusa');
+          const isUni = fullText.includes('un brazo') || fullText.includes('una mano') || fullText.includes('unilateral') || 
+                        fullText.includes('one arm') || fullText.includes('single arm') || fullText.includes('one hand');
+          return isKb && (isUni || !fullText.includes('two') && !fullText.includes('dos'));
+        }
+        if (eq === 'mancuernas') {
+          return fullText.includes('mancuerna') || fullText.includes('dumbbell');
+        }
+        if (eq === 'sin_material') {
+          return fullText.includes('peso corporal') || fullText.includes('body weight');
+        }
+        if (eq === 'bandas') {
+          return fullText.includes('banda') || fullText.includes('band') || fullText.includes('elástica');
+        }
+        return false;
+      });
+      if (!matchAnyEquip) return false;
+    }
+
+    // 2. Muscle check (Additive: matches if it fits AT LEAST ONE selected muscle group)
+    if (muscles.length > 0) {
+      const matchAnyMuscle = muscles.some(m => {
+        if (m === 'pecho') return fullText.includes('pecho') || fullText.includes('chest') || fullText.includes('pectoral');
+        if (m === 'espalda') return fullText.includes('espalda') || fullText.includes('back') || fullText.includes('dorsal') || fullText.includes('trapecio');
+        if (m === 'piernas') return fullText.includes('pierna') || fullText.includes('gluteo') || fullText.includes('glúteo') || fullText.includes('cuadricep') || fullText.includes('cuádricep') || fullText.includes('isquio') || fullText.includes('femoral') || fullText.includes('leg');
+        if (m === 'brazos') return fullText.includes('brazo') || fullText.includes('bicep') || fullText.includes('bícep') || fullText.includes('tricep') || fullText.includes('trícep') || fullText.includes('arm');
+        if (m === 'hombros') return fullText.includes('hombro') || fullText.includes('deltoid') || fullText.includes('shoulder');
+        if (m === 'core') return fullText.includes('cintura') || fullText.includes('waist') || fullText.includes('core') || fullText.includes('abs') || fullText.includes('abdominal');
+        return false;
+      });
+      if (!matchAnyMuscle) return false;
+    }
+
+    return true;
+  });
+
+  // Fallback if zero found
+  if (matched.length === 0) {
+    matched = state.exercises.filter(ex => {
+      const fullText = (ex._idx || '').toLowerCase();
+      if (muscles.length > 0) return muscles.some(m => fullText.includes(m));
+      return true;
+    });
+  }
+
+  // Balance & Shuffle
+  const count = Math.min(Math.max(requestedCount, 4), Math.max(matched.length, 1));
+  const shuffled = matched.slice().sort(() => 0.5 - Math.random());
+  const selected = shuffled.slice(0, count);
+
+  let desc = `He combinado tu selección de **${selected.length} ejercicios**:`;
+  if (equips.length > 0) desc += `\n• **Material combinado:** ${equips.map(e => e.replace(/_/g, ' ')).join(' + ')}.`;
+  if (muscles.length > 0) desc += `\n• **Músculos objetivo:** ${muscles.join(', ')}.`;
+
+  return {
+    message: desc,
+    exercises: selected.map(e => ({ id: e.id, name: e.name }))
+  };
+}
+
 function processUserRequest(text) {
   aiIsTyping = true;
   aiSendBtn.disabled = true;
@@ -1222,12 +1385,24 @@ function wireEvents() {
     aiInput.style.height = Math.min(aiInput.scrollHeight, 120) + 'px';
   });
 
-  // Quick prompts
-  aiQuickPrompts.querySelectorAll('.ai-quick-prompt').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const text = btn.textContent;
-      addUserMessage(text);
-      processUserRequest(text);
+  // Additive Multi-Select Quick Chips
+  const quickChips = document.querySelectorAll('.ai-quick-chip');
+  quickChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const type = chip.dataset.type; // 'equip' or 'muscle'
+      const val = chip.dataset.val;
+
+      const targetSet = (type === 'equip') ? activeAiSelections.equipments : activeAiSelections.muscles;
+      if (targetSet.has(val)) {
+        targetSet.delete(val);
+        chip.classList.remove('active');
+      } else {
+        targetSet.add(val);
+        chip.classList.add('active');
+      }
+
+      // Generate & update routine dynamically based on current combined set
+      generateAdditiveRoutine();
     });
   });
 

@@ -383,6 +383,11 @@
         → Obtener API Key gratuita en aistudio.google.com
       </a>
       <input class="ai-key-input" id="api-key-input" type="password" placeholder="Pega aquí tu API Key (AIza...)" />
+      <select id="model-select" style="width:100%;max-width:400px;padding:10px 14px;background:#1e1e24;border:1px solid rgba(124,58,237,0.4);border-radius:12px;color:#f4f4f6;font-size:13.5px;outline:none;">
+        <option value="gemini-2.0-flash">⚡ Gemini 2.0 Flash — Gratis, rápido (recomendado)</option>
+        <option value="gemini-2.5-flash">🚀 Gemini 2.5 Flash — Más potente</option>
+        <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro — Máxima calidad (requiere Pro)</option>
+      </select>
       <button class="ai-key-submit-btn" id="api-key-save-btn">Guardar y Activar 🚀</button>
     </div>
 
@@ -867,6 +872,13 @@ async function sendToGemini(userMessage) {
   const key = localStorage.getItem('gemini_api_key');
   if (!key) return;
 
+  const savedModel = localStorage.getItem('gemini_model') || 'gemini-2.0-flash';
+  const FALLBACK_MODELS = {
+    'gemini-2.5-pro':   'gemini-2.5-flash',
+    'gemini-2.5-flash': 'gemini-2.0-flash',
+    'gemini-2.0-flash': 'gemini-2.0-flash',
+  };
+
   aiIsTyping = true;
   aiSendBtn.disabled = true;
   aiStatus.textContent = 'Pensando...';
@@ -901,7 +913,7 @@ INSTRUCCIONES ESTRICTAS:
   };
 
   try {
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`, {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${savedModel}:generateContent?key=${key}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -996,6 +1008,8 @@ function wireEvents() {
     apiKeySaveBtn.disabled = true;
     setTimeout(() => {
       localStorage.setItem('gemini_api_key', key);
+      const modelSelect = document.getElementById('model-select');
+      if (modelSelect) localStorage.setItem('gemini_model', modelSelect.value);
       aiSetupScreen.style.display = 'none';
       aiChatScreen.style.display = 'flex';
       aiChatScreen.style.flexDirection = 'column';

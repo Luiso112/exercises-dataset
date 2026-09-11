@@ -1,4 +1,4 @@
-const CACHE_NAME = 'exercisedb-pwa-v13-full-card-drag';
+const CACHE_NAME = 'exercisedb-pwa-v14-centered-modal-fix';
 const MEDIA_CACHE = 'exercisedb-media-v1';
 
 const STATIC_ASSETS = [

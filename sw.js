@@ -1,4 +1,4 @@
-const CACHE_NAME = 'exercisedb-pwa-v14-centered-modal-fix';
+const CACHE_NAME = 'exercisedb-pwa-v15-saved-modal-override';
 const MEDIA_CACHE = 'exercisedb-media-v1';
 
 const STATIC_ASSETS = [

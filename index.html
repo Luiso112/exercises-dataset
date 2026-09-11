@@ -464,16 +464,33 @@
       #mobile-mode-btn { display: none !important; }
       .exercise-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
       
-      /* Make Modal Panel behave like iOS Bottom Sheet */
-      .modal-overlay {
+      /* Make Exercise Detail Modal behave like iOS Bottom Sheet, but NOT Saved Routines */
+      #modal-overlay {
         align-items: flex-end !important;
         padding: 0 !important;
       }
-      .modal-panel {
+      #modal-overlay .modal-panel {
         width: 100% !important;
         max-height: 88dvh !important;
         border-radius: 24px 24px 0 0 !important;
         transform: translateY(0);
+      }
+
+      /* Force Saved Routines Modal to be centered floating dialog on iPhone, completely above bottom tabbar */
+      #saved-routines-modal {
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 16px !important;
+        z-index: 9999 !important;
+      }
+      #saved-routines-modal .modal-panel {
+        width: min(500px, 92vw) !important;
+        max-height: 75dvh !important;
+        border-radius: 20px !important;
+        margin: auto !important;
+        transform: scale(1) !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.8) !important;
+        border: 1px solid rgba(255,255,255,0.18) !important;
       }
     }
 
